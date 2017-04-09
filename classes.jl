@@ -1,16 +1,18 @@
 type TypeSystemParams          # parameters for MPC solver
-    A::Array{Float64,2}
+    Ar::Array{Float64,2}
+    Ad::Array{Float64,2}
     B::Array{Float64,2}
     n::Int64
     d::Int64
-    TypeSystemParams( A=[1 1;1 1], B=[1 1;1 1], n = 0, d= 0 ) = new(A, B, n, d)
+    TypeSystemParams( Ar=[1 1;1 1], Ad=[1 1;1 1], B=[1 1;1 1], n = 0, d= 0 ) = new(Ar, Ad, B, n, d)
 end
 
 type TypeLMPCparams          # parameters for MPC solver
     Q::Array{Float64,2}
+    Qe::Array{Float64,2}
     R::Array{Float64,2}
     N::Int64
-    TypeLMPCparams( Q=[1 1;1 1], R=[1 1;1 1], N = 0 ) = new(Q, R, N)
+    TypeLMPCparams( Q=[1 1;1 1], Qe=[1 1;1 1], R=[1 1;1 1], N = 0 ) = new(Q, Qe, R, N)
 end
 
 type TypeLMPCSol          # parameters for MPC solver
