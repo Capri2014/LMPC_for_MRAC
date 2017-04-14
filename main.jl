@@ -36,7 +36,7 @@ LMPCparams.N  = 3
 LMPCparams.Q  = [1.0 0.0; 
                  0.0 1.0]
 
-LMPCparams.Qe = 0.1*[1.0 0.0; 
+LMPCparams.Qe = 1.0*[1.0 0.0; 
                      0.0 1.0]
 
 LMPCparams.R  = [1.0 0.0; 
@@ -95,7 +95,7 @@ Qfun[:, 1:time[it], it] = ComputeCost(x_LMPC[:,1:time[it]], u_LMPC[:,1:time[it]]
 # Now start with the Second iteration (The first is for the feasible trajectory)
 it = 2
 Difference = 1
-while (abs(Difference) > (1e-7))&&(it<10)
+while (abs(Difference) > (1e-5))&&(it<10)
     # Vectorize the SS and the Q function
 
     SSdim = sum(time)
@@ -132,8 +132,13 @@ while (abs(Difference) > (1e-7))&&(it<10)
     t = 1
     while ((cost_LMPC[t] > (1e-5))&&(t<Buffer-1))
         
-        solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun) 
-        
+        if t == 1
+            solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun) 
+            solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun) 
+        else
+            solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun) 
+        end
+
         x_LMPC[:,t+1]  = LMPCSol.x[:,2]
         u_LMPC[:,t]    = LMPCSol.u[:,1]
 

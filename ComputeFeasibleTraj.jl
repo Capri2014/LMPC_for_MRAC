@@ -6,7 +6,7 @@ function Feasible_Traj(SystemParams::TypeSystemParams, x0::Array{Float64,1}, K_r
     n  = SystemParams.n
     d  = SystemParams.d
 
-    Points = 60
+    Points = 150
     x_real = zeros(n, Points+1)
     x_real[:,1] = x0
     u_real = zeros(d, Points)

@@ -61,8 +61,8 @@ type LMPC_Model
 
         for j=3:5
             for i=1:N
-                setlowerbound(u_Ol[j,i], -100)
-                setupperbound(u_Ol[j,i],  100)
+                setlowerbound(u_Ol[j,i], -500)
+                setupperbound(u_Ol[j,i],  500)
             end
         end
         for j=1:SSdim
@@ -95,10 +95,10 @@ type LMPC_Model
         @NLobjective(mdl, Min, state_cost + input_cost + termi_cost)
 
         # First solve
-        sol_stat=solve(mdl)
-        println("Finished solve 1: $sol_stat")
-        sol_stat=solve(mdl)
-        println("Finished solve 2: $sol_stat")
+        #sol_stat=solve(mdl)
+        #println("Finished solve 1: $sol_stat")
+        #sol_stat=solve(mdl)
+        #println("Finished solve 2: $sol_stat")
         
         m.mdl  = mdl
         m.x0   = x0
