@@ -32,7 +32,7 @@ SystemParams.B  = [1.0 0.0;
 SystemParams.n  = n
 SystemParams.d  = d
 
-LMPCparams.N  = 3
+LMPCparams.N  = 2
 LMPCparams.Q  = [1.0 0.0; 
                  0.0 1.0]
 
@@ -95,7 +95,7 @@ Qfun[:, 1:time[it], it] = ComputeCost(x_LMPC[:,1:time[it]], u_LMPC[:,1:time[it]]
 # Now start with the Second iteration (The first is for the feasible trajectory)
 it = 2
 Difference = 1
-while (abs(Difference) > (1e-5))&&(it<10)
+while (abs(Difference) > (1e-7))&&(it<10)
     # Vectorize the SS and the Q function
 
     SSdim = sum(time)
