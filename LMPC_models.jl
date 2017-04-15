@@ -28,25 +28,6 @@ type LMPC_Model
         @variable( mdl, x_Ol[1:(N+1),1:n]) 
         @variable( mdl, u_Ol[1:N,1:d])
 
-        # Set bounds
-        #=z_lb_4s = ones(mpcParams.N+1,1)*[-Inf -Inf -Inf -0.5]                  # lower bounds on states
-        z_ub_4s = ones(mpcParams.N+1,1)*[ Inf  Inf  Inf  1.5]                  # upper bounds
-        u_lb_4s = ones(mpcParams.N,1) * [0.0  -0.3]                            # lower bounds on steering
-        u_ub_4s = ones(mpcParams.N,1) * [1.2   0.3]                            # upper bounds
-
-        for i=1:2
-            for j=1:N
-                setlowerbound(u_Ol[j,i], u_lb_4s[j,i])
-                setupperbound(u_Ol[j,i], u_ub_4s[j,i])
-            end
-        end=#
-        # for i=1:4
-        #     for j=1:N+1
-        #         setlowerbound(z_Ol[j,i], z_lb_4s[j,i])
-        #         setupperbound(z_Ol[j,i], z_ub_4s[j,i])
-        #     end
-        # end
-
         @NLparameter(mdl, x0[i=1:n] == 0)
 
 
@@ -56,9 +37,6 @@ type LMPC_Model
 
         # System dynamics
         for i=1:N
-            # for j = 1:2
-            #     @NLconstraint(mdl, x_Ol[i+1,j] == x_Ol[i,j] + u_Ol[i,j])
-            # end
             for j=1:2
                     @NLconstraint(mdl, x_Ol[i+1,j] == sum{A[j,k] * x_Ol[i,k] + B[j,k] * u_Ol[i,k], k=1:2})
             end
