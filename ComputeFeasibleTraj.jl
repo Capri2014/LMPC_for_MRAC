@@ -65,17 +65,17 @@ println("K_tilda is ", K_tilda)
 
 println("K_tilda optimization is ", k_tilda_LMS)
 
-for i = 1:Points
-    x_feasible[5,i]   = k_tilda_LMS[1]
-    x_feasible[6,i]   = k_tilda_LMS[2]
-    x_feasible[7,i]   = k_tilda_LMS[3]
+# for i = 1:Points
+#     x_feasible[5,i]   = k_tilda_LMS[1]
+#     x_feasible[6,i]   = k_tilda_LMS[2]
+#     x_feasible[7,i]   = k_tilda_LMS[3]
 
-end
-i = Points + 1
+# end
+# i = Points + 1
 
-x_feasible[5,i]   = k_tilda_LMS[1]
-x_feasible[6,i]   = k_tilda_LMS[2]
-x_feasible[7,i]   = k_tilda_LMS[3]
+# x_feasible[5,i]   = k_tilda_LMS[1]
+# x_feasible[6,i]   = k_tilda_LMS[2]
+# x_feasible[7,i]   = k_tilda_LMS[3]
 
 return x_feasible, u_feasible
 

@@ -33,7 +33,7 @@ SystemParams.B  = [1.0 0.0;
 SystemParams.n  = n
 SystemParams.d  = d
 
-LMPCparams.N  = 3
+LMPCparams.N  = 2
 LMPCparams.Q  = [1.0 0.0; 
                  0.0 1.0]
 
