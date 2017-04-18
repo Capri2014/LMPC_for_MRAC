@@ -11,6 +11,7 @@ include("SolveLMPCProblem.jl")
 include("ComputeFeasibleTraj.jl")
 include("ComputeCost.jl")
 
+
 SystemParams = TypeSystemParams()
 LMPCparams   = TypeLMPCparams()
 LMPCSol      = TypeLMPCSol()
@@ -32,7 +33,7 @@ SystemParams.B  = [1.0 0.0;
 SystemParams.n  = n
 SystemParams.d  = d
 
-LMPCparams.N  = 2
+LMPCparams.N  = 3
 LMPCparams.Q  = [1.0 0.0; 
                  0.0 1.0]
 
@@ -49,6 +50,7 @@ x0          = [-38.0, -25.0]
 # Compute First Feasible Iteration    
 K_r    = -[0.9 0.7;
             0  1.6]
+
 
 x_feasible, u_feasible = Feasible_Traj(SystemParams, x0, K_r)
 
@@ -137,6 +139,7 @@ while (abs(Difference) > (1e-7))&&(it<10)
             solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun) 
         else
             solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun) 
+            solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun) 
         end
 
         x_LMPC[:,t+1]  = LMPCSol.x[:,2]
@@ -147,6 +150,8 @@ while (abs(Difference) > (1e-7))&&(it<10)
         u_real[:,t]       = K_real[:,:,t+1]*x_real[:,t, it] + u_LMPC[1:2,t]
         x_real[:,t+1,it]  = Ar * x_real[:,t, it] + u_real[:,t]  
 
+        # x_LMPC[3:4,t+1] = x_real[:,t+1,it] - x_LMPC[1:2,t+1]
+        
         cost_LMPC[t+1] = LMPCSol.cost
         println("LMPC cost at step ",t, " of iteration ", it," is ", cost_LMPC[t+1])
 

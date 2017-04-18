@@ -58,6 +58,10 @@ type LMPC_Model
                     @NLconstraint(mdl, x_Ol[j,i+1] == x_Ol[j,i] + u_Ol[j-2,i])
             end
         end
+        
+        for i=1:N+1
+            setupperbound(x_Ol[2,i],  8)
+        end
 
         for j=3:5
             for i=1:N
@@ -65,6 +69,7 @@ type LMPC_Model
                 setupperbound(u_Ol[j,i],  500)
             end
         end
+
         for j=1:SSdim
             setlowerbound(lamb[j,1], 0)
         end
