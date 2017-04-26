@@ -59,9 +59,9 @@ type LMPC_Model
             end
         end
         
-        for i=1:N+1
-            setupperbound(x_Ol[2,i],  0.08)
-        end
+        # for i=1:N+1
+        #     setupperbound(x_Ol[2,i],  0.08)
+        # end
 
         for j=3:5
             for i=1:N

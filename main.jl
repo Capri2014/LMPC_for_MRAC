@@ -37,8 +37,8 @@ LMPCparams.N  = 2
 LMPCparams.Q  = [1.0 0.0; 
                  0.0 1.0]
 
-LMPCparams.Qe = 1.0*[1.0 0.0; 
-                     0.0 1.0]
+LMPCparams.Qe = 1*[1.0 0.0; 
+                   0.0 1.0]
 
 LMPCparams.R  = [1.0 0.0; 
                  0.0 1.0]
@@ -150,7 +150,7 @@ while (abs(Difference) > (1e-7))&&(it<10)
         u_real[:,t]       = K_real[:,:,t+1]*x_real[:,t, it] + u_LMPC[1:2,t]
         x_real[:,t+1,it]  = Ar * x_real[:,t, it] + u_real[:,t]  
 
-        # x_LMPC[3:4,t+1] = x_real[:,t+1,it] - x_LMPC[1:2,t+1]
+        x_LMPC[3:4,t+1] = x_real[:,t+1,it] - x_LMPC[1:2,t+1]
         
         cost_LMPC[t+1] = LMPCSol.cost
         println("LMPC cost at step ",t, " of iteration ", it," is ", cost_LMPC[t+1])
@@ -182,31 +182,40 @@ for i = 2:it
     figure()
     plot(x_feasible[1,:]',x_feasible[2,:]', "-ro")
     hold(1)
-    for j = 1:(i-1)
-        plot(SS[1, 1:time[j], j]', SS[2, 1:time[j], j]', "-ro")
+
+    j = 1
+    plot(SS[1, 1:time[j], j]', SS[2, 1:time[j], j]', "-go", label="Safe Set")
+    for j = 2:(i-1)
+        plot(SS[1, 1:time[j], j]', SS[2, 1:time[j], j]', "-go")
     end
 
-    plot(SS[1, 1:time[i], i]', SS[2, 1:time[i], i]', "-ko")
-    plot(x_real[1, 1:time[i], i]', x_real[2, 1:time[i], i]', "-g*")
+    plot(SS[1, 1:time[i], i]', SS[2, 1:time[i], i]', "-ko", label="Trajectory Reference System")
+    plot(x_real[1, 1:time[i], i]', x_real[2, 1:time[i], i]', "-r*", label="Trajectory Real System" )
     
     grid(1)
-    title("LMPC Steady State")
+    LMPCIteration = i -1
+    title("Closed-loop trajectory at iteration $LMPCIteration")
     axis("equal")
-    xlabel("x_1")
-    ylabel("x_2")
-    legend(["Trajectory"])
+    xlabel(L"$x_1$", size=24)
+    ylabel(L"$x_2$", size=24)
+    legend(loc="lower right",fancybox="true")
 end
 
 figure()
-for i = 2:it
-    hold(1)
-    plot(1:time[i], SS[3, 1:time[i], i]', "-ko")
-    plot(1:time[i], SS[4, 1:time[i], i]', "-ro")
-    
-    grid(1)
-    title("LMPC Steady State")
-    axis("equal")
-    xlabel("x_1")
-    ylabel("x_2")
-    legend(["Error"])
-end
+hold(1)
+i = 2
+vec1 = SS[3, 1:time[i], i].^2 + SS[4, 1:time[i], i].^2
+println("Here ",vec)
+plot(1:time[i], vec1[:] , "-ro", label="1st Iteration")
+
+i = it
+vecss = SS[3, 1:time[i], i].^2 + SS[4, 1:time[i], i].^2
+println("Here ",vec)
+plot(1:time[i], vecss[:] , "-g*", label="Steady State")
+
+grid(1)
+title("LMPC Steady State")
+axis("equal")
+xlabel(L"Time step", size=24)
+ylabel(L"$||x_2||_2^2$", size=24)
+legend()
