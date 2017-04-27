@@ -151,7 +151,63 @@ while (abs(Difference) > (1e-7))&&(it<20)
         println("LMPC cost at step ",t, " of iteration ", it," is ", cost_LMPC[t+1], " and Estimte is ", LMPCSol.a)
         println("Value ", x_LMPC[:,t+1])
 
-        t=t+1    
+        # System ID
+        SSdim_ID = sum(time) + t
+        vector_A1   = zeros(SSdim_ID-(it-1), 2)
+        vector_A2   = zeros(SSdim_ID-(it-1), 1)
+
+        vector_b1   = zeros(SSdim_ID-(it-1), 1)
+        vector_b2   = zeros(SSdim_ID-(it-1), 1)
+
+        Counter_ID = 1
+        for ii = 1:(it-1)
+            for jj = 1:(time[ii]-1)
+                vector_A1[Counter_ID,:] = [ SS[1,jj,ii], SS[2,jj,ii] ]
+                vector_b1[Counter_ID,:] = [ SS[1,jj+1,ii] - B[1] * OldU[1,jj,ii]]
+                
+                vector_A2[Counter_ID,:] = [ SS[2,jj,ii] ]
+                vector_b2[Counter_ID,:] = [ SS[2,jj+1,ii] - B[2] * OldU[1,jj,ii]]
+
+                Counter_ID = Counter_ID + 1
+            end
+        end
+        for ii = 1:t
+            vector_A1[Counter_ID,:] = [ x_LMPC[1,ii], x_LMPC[2,ii] ]
+            vector_b1[Counter_ID,:] = [ x_LMPC[1,ii+1] - B[1] * u_LMPC[1,ii]]
+            
+            vector_A2[Counter_ID,:] = [ x_LMPC[2,ii] ]
+            vector_b2[Counter_ID,:] = [ x_LMPC[2,ii+1] - B[2] * u_LMPC[1,ii]]
+
+            Counter_ID = Counter_ID + 1
+        end
+
+
+        Matrix1 = vector_A1'*vector_A1
+        Matrix2 = vector_A2'*vector_A2
+
+
+        Row1    = inv(Matrix1) * vector_A1' * vector_b1
+        Row2    = inv(Matrix2) * vector_A2' * vector_b2
+
+        MeanEstimate = zeros(2,2)
+        MeanEstimate[1,:] = Row1
+        MeanEstimate[2,2] = Row2[1]
+
+        MSE1 = 0;
+        MSE2 = 0;
+        for i = 1:(SSdim_ID-it)
+            MSE1 = MSE1 + ( vector_b1[i,:] - *(vector_A1[i,:], Row1) )^2
+            MSE2 = MSE2 + ( vector_b2[i,:] - vector_A2[i,1]* Row2[1] )^2
+        end
+        MSE1 = MSE1^(0.5)/(SSdim_ID-it-1)
+        MSE2 = MSE2^(0.5)/(SSdim_ID-it-1)
+
+        MSE = zeros(2)
+        MSE[1] = MSE1[1]
+        MSE[2] = MSE2[1]
+
+        println("Estimte is ", MeanEstimate)
+        t=t+1
     end
     # ========================================================================================================
     # ==================================== Back to the iterations loop =======================================
