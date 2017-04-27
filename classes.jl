@@ -17,6 +17,7 @@ end
 type TypeLMPCSol          # parameters for MPC solver
     x::Array{Float64,2}
     u::Array{Float64,2}
+    a::Array{Float64,1}
     cost::Float64
-    TypeLMPCSol( x=[1 1;1 1], u=[1 1;1 1], cost = 0) = new(x, u, cost)
+    TypeLMPCSol( x=[1 1;1 1], u=[1 1;1 1], a = [1,1] , cost = 0) = new(x, u, a, cost)
 end

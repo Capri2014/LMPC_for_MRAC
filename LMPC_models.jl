@@ -4,26 +4,27 @@ type LMPC_Model
     x0::Array{JuMP.NonlinearParameter,1}
     SS::Array{JuMP.NonlinearParameter,2}
     Qfun::Array{JuMP.NonlinearParameter,1}
+    Mean::Array{JuMP.NonlinearParameter,2}
+    Variance::Array{JuMP.NonlinearParameter,1}
 
     x_Ol::Array{JuMP.Variable,2}
     u_Ol::Array{JuMP.Variable,2}
+    a_Ol::Array{JuMP.Variable,1}
     lamb::Array{JuMP.Variable,2}
 
     state_cost::JuMP.NonlinearExpression
     input_cost::JuMP.NonlinearExpression
     termi_cost::JuMP.NonlinearExpression
 
-    function LMPC_Model(LMPCparams::TypeLMPCparams,SystemParams::TypeSystemParams, SSdim::Int64)
+    function LMPC_Model(LMPCparams::TypeLMPCparams,SystemParams::TypeSystemParams, SSdim::Int64, Mean::Array{Float64,2}, Variance::Array{Float64,1})
         println("Starting creation")
         m = new()
-        A          = SystemParams.Ad
         B          = SystemParams.B
-        n          = 7
-        d          = 5
+        n          = 2
+        d          = 1
 
         N           = LMPCparams.N
         Q           = LMPCparams.Q
-        Qe          = LMPCparams.Qe
         R           = LMPCparams.R
 
         # Create Model
@@ -32,13 +33,18 @@ type LMPC_Model
         # Create variables (these are going to be optimized)
         @variable( mdl, x_Ol[1:n,1:(N+1)]) 
         @variable( mdl, u_Ol[1:d,1:N])
+        @variable( mdl, a_Ol[1:3])
         @variable( mdl, lamb[1:SSdim,1])
 
+        setvalue(a_Ol[1],Mean[1,1])
+        setvalue(a_Ol[2],Mean[1,2])
+        setvalue(a_Ol[3],Mean[2,2])
 
         @NLparameter(mdl, x0[1:n] == 0)
         @NLparameter(mdl, SS[1:n,1:SSdim] == 0)
         @NLparameter(mdl, Qfun[1:SSdim] == 0)
-
+        @NLparameter(mdl, Mean[1:2,1:2] == 0)
+        @NLparameter(mdl, Variance[1:2] == 0)
 
         # System dynamics
         @NLconstraint(mdl, [i=1:n], x_Ol[i,1] == x0[i])         # initial condition
@@ -46,30 +52,30 @@ type LMPC_Model
 
         # System dynamics
 
-        for i=1:N
-            for j=1:2
-                    @NLconstraint(mdl, x_Ol[j,i+1] == sum{A[j,k] * x_Ol[k,i] + B[j,k] * u_Ol[k,i], k=1:2})
-            end
-            @NLconstraint(mdl, x_Ol[3,i+1] == sum{A[1,k] * x_Ol[k+2,i], k=1:2}
-                         + x_Ol[5,i+1]*(x_Ol[1,i] + x_Ol[3,i]) + x_Ol[6,i+1]*(x_Ol[2,i] + x_Ol[4,i]) )
-           
-            @NLconstraint(mdl, x_Ol[4,i+1] == sum{A[2,k] * x_Ol[k+2,i], k=1:2} + x_Ol[7,i+1]*(x_Ol[2,i] + x_Ol[4,i]) )
-            for j=5:7
-                    @NLconstraint(mdl, x_Ol[j,i+1] == x_Ol[j,i] + u_Ol[j-2,i])
-            end
+        for i=1:N           
+            @NLconstraint(mdl, x_Ol[1,i+1] == a_Ol[1] * x_Ol[1,i] + a_Ol[2] * x_Ol[2,i])
+            @NLconstraint(mdl, x_Ol[2,i+1] ==    0                + a_Ol[3] * x_Ol[2,i] + B[2]*u_Ol[1,i])
         end
         
-        # for i=1:N+1
-        #     setupperbound(x_Ol[2,i],  0.08)
-        # end
+        # @NLconstraint(mdl, a_Ol[1] - Mean[1,1] >= -Variance[1])
+        # @NLconstraint(mdl, a_Ol[1] - Mean[1,1] <=  Variance[1])
+        # @NLconstraint(mdl, a_Ol[2] - Mean[1,2] >= -Variance[1])
+        # @NLconstraint(mdl, a_Ol[2] - Mean[1,2] <=  Variance[1])
+        # @NLconstraint(mdl, a_Ol[3] - Mean[2,2] >= -Variance[2])
+        # @NLconstraint(mdl, a_Ol[3] - Mean[2,2] <=  Variance[2])
 
-        for j=3:5
-            for i=1:N
-                setlowerbound(u_Ol[j,i], -500)
-                setupperbound(u_Ol[j,i],  500)
-            end
+        for i=1:N            
+            # @NLconstraint(mdl, (a_Ol[1] == Mean[1,1]) )
+            # @NLconstraint(mdl, (a_Ol[2] == Mean[1,2]) )
+            # @NLconstraint(mdl, (a_Ol[3] == Mean[2,2]) )
+
+            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] >= -2*Variance[1])
+            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] <=  2*Variance[1])
+            @NLconstraint(mdl, (a_Ol[3] - Mean[2,2]) * x_Ol[2,i] >= -2*Variance[2])
+            @NLconstraint(mdl, (a_Ol[3] - Mean[2,2]) * x_Ol[2,i] <=  2*Variance[2])
         end
 
+        # Constratints Related with the LMPC
         for j=1:SSdim
             setlowerbound(lamb[j,1], 0)
         end
@@ -77,20 +83,18 @@ type LMPC_Model
 
 
         @NLconstraint(mdl, x_Ol[1,N+1] == sum{SS[1,k] * lamb[k,1], k = 1:SSdim})        
-        @NLconstraint(mdl, x_Ol[2,N+1] == sum{SS[2,k] * lamb[k,1], k = 1:SSdim})        
-        @NLconstraint(mdl, x_Ol[3,N+1] == sum{SS[3,k] * lamb[k,1], k = 1:SSdim})        
-        @NLconstraint(mdl, x_Ol[4,N+1] == sum{SS[4,k] * lamb[k,1], k = 1:SSdim})        
-        @NLconstraint(mdl, x_Ol[5,N+1] == sum{SS[5,k] * lamb[k,1], k = 1:SSdim})        
-        @NLconstraint(mdl, x_Ol[6,N+1] == sum{SS[6,k] * lamb[k,1], k = 1:SSdim})        
-        @NLconstraint(mdl, x_Ol[7,N+1] == sum{SS[7,k] * lamb[k,1], k = 1:SSdim})   
-               # Cost definitions
+        @NLconstraint(mdl, x_Ol[2,N+1] == sum{SS[2,k] * lamb[k,1], k = 1:SSdim})         
+       
+        # Cost definitions
         # State cost
         # ---------------------------------
-        @NLexpression(mdl, state_cost, sum{sum{ (Q[j,j]  * x_Ol[j,i])^2  , i=1:N},j=1:2} + 
-                                       sum{sum{ (Qe[j,j] * x_Ol[j+2,i])^2, i=1:N},j=1:2})
+        @NLexpression(mdl, state_cost, sum{sum{ (Q[j,j]  * x_Ol[j,i])^2  , i=1:N},j=1:2})
 
         # Control Input cost
-        @NLexpression(mdl, input_cost, sum{sum{ (R[j,j] * u_Ol[j,i])^2, i=1:N},j=1:2})
+        @NLexpression(mdl, input_cost, sum{ (R[1,1] * u_Ol[1,i])^2, i=1:N} 
+                                            + 0.00000001*(a_Ol[1] - Mean[1,1])^2
+                                            + 0.00000001*(a_Ol[2] - Mean[1,2])^2
+                                            + 0.00000001*(a_Ol[3] - Mean[2,2])^2)
 
         # Control Input cost
         @NLexpression(mdl, termi_cost, sum{ Qfun[j] * lamb[j,1] ,j=1:SSdim})
@@ -109,8 +113,13 @@ type LMPC_Model
         m.x0   = x0
         m.Qfun = Qfun
         m.SS   = SS
+        m.Variance = Variance
+        m.Mean   = Mean
+
         m.x_Ol = x_Ol
         m.u_Ol = u_Ol
+        m.a_Ol = a_Ol
+
         m.state_cost = state_cost
         m.input_cost = input_cost
         m.termi_cost = termi_cost

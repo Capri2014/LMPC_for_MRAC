@@ -5,8 +5,8 @@ function Feasible_Traj(SystemParams::TypeSystemParams, x0::Array{Float64,1}, K_r
     n  = SystemParams.n
     d  = SystemParams.d
 
-    Points = 180
-    PointsSysID = 150
+    Points = 100
+    PointsSysID = 80
     
     x_real = zeros(n, Points+1)
     x_real[:,1] = x0
@@ -24,7 +24,7 @@ function Feasible_Traj(SystemParams::TypeSystemParams, x0::Array{Float64,1}, K_r
 
     for i = 1:Points
         u_real[:,i]   = dot(K_r, x_real[:,i])
-        noise =0.0*[2*randn(); 3*randn()]
+        noise = 1*[2*randn(); 3*randn()]
         x_real[:,i+1] = Ar * x_real[:,i] + B * u_real[1,i] + noise
         u_apply = B * u_real[1,i]
 
@@ -49,34 +49,25 @@ Matrix2 = vector_A2'*vector_A2
 Row1    = inv(Matrix1) * vector_A1' * vector_b1
 Row2    = inv(Matrix2) * vector_A2' * vector_b2
 
+MeanEstimate = zeros(2,2)
+MeanEstimate[1,:] = Row1
+MeanEstimate[2,2] = Row2[1]
+
+MSE1 = 0;
 MSE2 = 0;
 for i = 1:PointsSysID
+    
+    MSE1 = MSE1 + ( vector_b1[i,:] - *(vector_A1[i,:], Row1) )^2
     MSE2 = MSE2 + ( vector_b2[i,:] - vector_A2[i,1]* Row2[1] )^2
-    println(vector_b2[i,:] - vector_A2[i,1]* Row2[1])
 end
-MSE2 = MSE2/(PointsSysID-1)
+MSE1 = MSE1^(0.5)/(PointsSysID-1)
+MSE2 = MSE2^(0.5)/(PointsSysID-1)
 
-println(Row1)
-println(Row2)
-println("MES",MSE2)
+MSE = zeros(2)
+MSE[1] = MSE1[1]
+MSE[2] = MSE2[1]
 
-# for i = 1:Points
-#     x_feasible[5,i]   = K12[1]
-#     x_feasible[6,i]   = K12[2]
-#     x_feasible[7,i]   = K22[1]
-
-# end
-# i = Points + 1
-
-# x_feasible[5,i]   = K12[1]
-# x_feasible[6,i]   = K12[2]
-# x_feasible[7,i]   = K22[1]
-
-# MatrixPlot = [K12[1] K12[2]; 0 K22]
-# println("Estimated K_tilda", MatrixPlot)
-# println("Real K_tilda", K_tilda)
-
-return x_feasible, u_feasible
+return x_feasible, u_feasible, MeanEstimate, MSE
 
 
 end
