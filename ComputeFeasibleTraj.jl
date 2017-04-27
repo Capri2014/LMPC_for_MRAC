@@ -16,8 +16,8 @@ function Feasible_Traj(SystemParams::TypeSystemParams, x0::Array{Float64,1}, K_r
     x_feasible = zeros(2, Points+1)
     u_feasible = zeros(1, Points)
 
-    vector_A1   = zeros(PointsSysID, 2)
-    vector_A2   = zeros(PointsSysID, 1)
+    vector_A1   = zeros(PointsSysID, 3)
+    vector_A2   = zeros(PointsSysID, 3)
 
     vector_b1   = zeros(PointsSysID, 1)
     vector_b2   = zeros(PointsSysID, 1)
@@ -31,11 +31,11 @@ function Feasible_Traj(SystemParams::TypeSystemParams, x0::Array{Float64,1}, K_r
         x_feasible[:,i] = x_real[:,i]
         u_feasible[:,i] = u_real[1,i]
         if (i > 1) && (i<PointsSysID+1)
-            vector_A1[i-1,:] = [ x_feasible[1,i-1], x_feasible[2,i-1] ]
-            vector_b1[i-1,:] = [ x_feasible[1,i] - B[1] * u_feasible[1,i-1]]
+            vector_A1[i-1,:] = [ x_feasible[1,i-1], x_feasible[2,i-1], u_feasible[1,i-1]]
+            vector_b1[i-1,:] = [ x_feasible[1,i] ]
             
-            vector_A2[i-1,:] = [ x_feasible[2,i-1]]
-            vector_b2[i-1,:] = [ x_feasible[2,i] - B[2] * u_feasible[1,i-1]]
+            vector_A2[i-1,:] = [ x_feasible[1,i-1], x_feasible[2,i-1], u_feasible[1,i-1]]
+            vector_b2[i-1,:] = [ x_feasible[2,i] ]
         end
 
     end
@@ -46,12 +46,12 @@ Matrix1 = vector_A1'*vector_A1
 Matrix2 = vector_A2'*vector_A2
 
 
-Row1    = inv(Matrix1) * vector_A1' * vector_b1
-Row2    = inv(Matrix2) * vector_A2' * vector_b2
+Row1    = Matrix1 \ (vector_A1' * vector_b1)
+Row2    = Matrix2 \ (vector_A2' * vector_b2)
 
-MeanEstimate = zeros(2,2)
+MeanEstimate = zeros(2,3)
 MeanEstimate[1,:] = Row1
-MeanEstimate[2,2] = Row2[1]
+MeanEstimate[2,:] = Row2
 
 MSE1 = 0;
 MSE2 = 0;

@@ -37,7 +37,7 @@ type NominalLMPC_Model
         @NLparameter(mdl, x0[1:n] == 0)
         @NLparameter(mdl, SS[1:n,1:SSdim] == 0)
         @NLparameter(mdl, Qfun[1:SSdim] == 0)
-        @NLparameter(mdl, Mean[1:2,1:2] == 0)
+        @NLparameter(mdl, Mean[1:2,1:3] == 0)
 
         # System dynamics
         @NLconstraint(mdl, [i=1:n], x_Ol[i,1] == x0[i])         # initial condition
@@ -46,8 +46,8 @@ type NominalLMPC_Model
         # System dynamics
 
         for i=1:N           
-            @NLconstraint(mdl, x_Ol[1,i+1] == Mean[1,1] * x_Ol[1,i] + Mean[1,2] * x_Ol[2,i])
-            @NLconstraint(mdl, x_Ol[2,i+1] ==    0                  + Mean[2,2] * x_Ol[2,i] + B[2]*u_Ol[1,i])
+            @NLconstraint(mdl, x_Ol[1,i+1] == Mean[1,1] * x_Ol[1,i] + Mean[1,2] * x_Ol[2,i] + Mean[1,3] *u_Ol[1,i])
+            @NLconstraint(mdl, x_Ol[2,i+1] == Mean[2,1] * x_Ol[1,i] + Mean[2,2] * x_Ol[2,i] + Mean[2,3] *u_Ol[1,i])
         end
 
         # Constratints Related with the LMPC

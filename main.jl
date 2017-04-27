@@ -32,7 +32,7 @@ SystemParams.n  = n
 SystemParams.d  = d
 
 
-LMPCparams.N  = 3
+LMPCparams.N  = 10
 LMPCparams.Q  = [1.0 0.0; 
                  0.0 1.0]
 
@@ -64,7 +64,7 @@ OptQ = zeros(1, Buffer, 20)
 time = zeros(20)
 time = round(Int64, time)
 
-SaveMean = zeros(2,2,20)
+SaveMean = zeros(2,3,20)
 SaveVari = zeros(1,2,20)
 
 time[1] = size(x_feasible)[2]
@@ -90,7 +90,7 @@ OptQ[:, 1:time[it], it] = ComputeCost(x_LMPC[:,1:time[it]], u_LMPC[:,1:time[it]]
 # Now start with the Second iteration (The first is for the feasible trajectory)
 it = 2
 Difference = 1
-while (abs(Difference) > (1e-7))&&(it<20)
+while (abs(Difference) > (1e-7))&&(it<10)
     # Vectorize the SS and the Q function
     SSdim = sum(time)
     ConvSS   = zeros(n, SSdim)
@@ -151,10 +151,10 @@ while (abs(Difference) > (1e-7))&&(it<20)
         println("LMPC cost at step ",t, " of iteration ", it," is ", cost_LMPC[t+1], " and Estimte is ", LMPCSol.a)
         println("Value ", x_LMPC[:,t+1])
 
-        # System ID
+        # System ID at time t
         SSdim_ID = sum(time) + t
-        vector_A1   = zeros(SSdim_ID-(it-1), 2)
-        vector_A2   = zeros(SSdim_ID-(it-1), 1)
+        vector_A1   = zeros(SSdim_ID-(it-1), 3)
+        vector_A2   = zeros(SSdim_ID-(it-1), 3)
 
         vector_b1   = zeros(SSdim_ID-(it-1), 1)
         vector_b2   = zeros(SSdim_ID-(it-1), 1)
@@ -162,21 +162,21 @@ while (abs(Difference) > (1e-7))&&(it<20)
         Counter_ID = 1
         for ii = 1:(it-1)
             for jj = 1:(time[ii]-1)
-                vector_A1[Counter_ID,:] = [ SS[1,jj,ii], SS[2,jj,ii] ]
-                vector_b1[Counter_ID,:] = [ SS[1,jj+1,ii] - B[1] * OldU[1,jj,ii]]
+                vector_A1[Counter_ID,:] = [ SS[1,jj,ii], SS[2,jj,ii], OldU[1,jj,ii] ]
+                vector_b1[Counter_ID,:] = [ SS[1,jj+1,ii] ]
                 
-                vector_A2[Counter_ID,:] = [ SS[2,jj,ii] ]
-                vector_b2[Counter_ID,:] = [ SS[2,jj+1,ii] - B[2] * OldU[1,jj,ii]]
+                vector_A2[Counter_ID,:] = [ SS[1,jj,ii], SS[2,jj,ii], OldU[1,jj,ii]]
+                vector_b2[Counter_ID,:] = [ SS[2,jj+1,ii] ]
 
                 Counter_ID = Counter_ID + 1
             end
         end
         for ii = 1:t
-            vector_A1[Counter_ID,:] = [ x_LMPC[1,ii], x_LMPC[2,ii] ]
-            vector_b1[Counter_ID,:] = [ x_LMPC[1,ii+1] - B[1] * u_LMPC[1,ii]]
+            vector_A1[Counter_ID,:] = [ x_LMPC[1,ii], x_LMPC[2,ii], u_LMPC[1,ii]]
+            vector_b1[Counter_ID,:] = [ x_LMPC[1,ii+1] ]
             
-            vector_A2[Counter_ID,:] = [ x_LMPC[2,ii] ]
-            vector_b2[Counter_ID,:] = [ x_LMPC[2,ii+1] - B[2] * u_LMPC[1,ii]]
+            vector_A2[Counter_ID,:] = [ x_LMPC[1,ii], x_LMPC[2,ii], u_LMPC[1,ii] ]
+            vector_b2[Counter_ID,:] = [ x_LMPC[2,ii+1] ]
 
             Counter_ID = Counter_ID + 1
         end
@@ -186,12 +186,12 @@ while (abs(Difference) > (1e-7))&&(it<20)
         Matrix2 = vector_A2'*vector_A2
 
 
-        Row1    = inv(Matrix1) * vector_A1' * vector_b1
-        Row2    = inv(Matrix2) * vector_A2' * vector_b2
+        Row1    = (Matrix1) \ (vector_A1' * vector_b1)
+        Row2    = (Matrix2) \ (vector_A2' * vector_b2)
 
-        MeanEstimate = zeros(2,2)
+        MeanEstimate = zeros(2,3)
         MeanEstimate[1,:] = Row1
-        MeanEstimate[2,2] = Row2[1]
+        MeanEstimate[2,:] = Row2
 
         MSE1 = 0;
         MSE2 = 0;
@@ -228,8 +228,8 @@ while (abs(Difference) > (1e-7))&&(it<20)
 
 
     SSdim_ID = sum(time)
-    vector_A1   = zeros(SSdim_ID-it, 2)
-    vector_A2   = zeros(SSdim_ID-it, 1)
+    vector_A1   = zeros(SSdim_ID-it, 3)
+    vector_A2   = zeros(SSdim_ID-it, 3)
 
     vector_b1   = zeros(SSdim_ID-it, 1)
     vector_b2   = zeros(SSdim_ID-it, 1)
@@ -237,11 +237,11 @@ while (abs(Difference) > (1e-7))&&(it<20)
     Counter_ID = 1
     for ii = 1:it
         for jj = 1:(time[ii]-1)
-            vector_A1[Counter_ID,:] = [ SS[1,jj,ii], SS[2,jj,ii] ]
-            vector_b1[Counter_ID,:] = [ SS[1,jj+1,ii] - B[1] * OldU[1,jj,ii]]
+            vector_A1[Counter_ID,:] = [ SS[1,jj,ii], SS[2,jj,ii], OldU[1,jj,ii] ]
+            vector_b1[Counter_ID,:] = [ SS[1,jj+1,ii] ]
             
-            vector_A2[Counter_ID,:] = [ SS[2,jj,ii] ]
-            vector_b2[Counter_ID,:] = [ SS[2,jj+1,ii] - B[2] * OldU[1,jj,ii]]
+            vector_A2[Counter_ID,:] = [ SS[1,jj,ii], SS[2,jj,ii], OldU[1,jj,ii]]
+            vector_b2[Counter_ID,:] = [ SS[2,jj+1,ii] ]
 
             Counter_ID = Counter_ID + 1
         end
@@ -251,12 +251,12 @@ while (abs(Difference) > (1e-7))&&(it<20)
     Matrix2 = vector_A2'*vector_A2
 
 
-    Row1    = inv(Matrix1) * vector_A1' * vector_b1
-    Row2    = inv(Matrix2) * vector_A2' * vector_b2
+    Row1    = (Matrix1) \ (vector_A1' * vector_b1)
+    Row2    = (Matrix2) \ (vector_A2' * vector_b2)
 
-    MeanEstimate = zeros(2,2)
+    MeanEstimate = zeros(2,3)
     MeanEstimate[1,:] = Row1
-    MeanEstimate[2,2] = Row2[1]
+    MeanEstimate[2,:] = Row2
 
     MSE1 = 0;
     MSE2 = 0;
@@ -279,22 +279,22 @@ it = it - 1
 figure()
 hold(1)
 for i = 1:it-1
-    plot(SS[1,:,i]',SS[2,:,i]', "-ks")
+    plot(SS[1,:,i]',SS[2,:,i]', "-ks", label="SS")
 end
-plot(x_LMPC[1,:]',x_LMPC[2,:]', "-ro")
-plot(OptX[1,:,it]',OptX[2,:,it]', "-g*")
-
+plot(x_LMPC[1,:]',x_LMPC[2,:]', "-ro", label="x_LMPC")
+plot(OptX[1,:,it]',OptX[2,:,it]', "-g*", label="Opt")
+legend()
 
 figure()
 index = it
-plot(SS[1,:,index]',SS[2,:,index]', "-ko")
-plot(OptX[1,:,index]',OptX[2,:,index]', "-g*")
-
+plot(SS[1,:,index]',SS[2,:,index]', "-ko", label="x_LMPC at last it")
+plot(OptX[1,:,index]',OptX[2,:,index]', "-g*", label="Opt")
+legend()
 
 figure()
 index = it-1
-plot(SS[1,:,index]',SS[2,:,index]', "-ko")
-plot(OptX[1,:,index]',OptX[2,:,index]', "-g*")
+plot(SS[1,:,index]',SS[2,:,index]', "-ko", label="x_LMPC it-1")
+plot(OptX[1,:,index]',OptX[2,:,index]', "-g*", label="Opt")
 
 for i = 1:it-1
     println(i,"-th itearion cost LMPC; ", Qfun[1,1,i])

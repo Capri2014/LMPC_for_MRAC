@@ -33,18 +33,23 @@ type LMPC_Model
         # Create variables (these are going to be optimized)
         @variable( mdl, x_Ol[1:n,1:(N+1)]) 
         @variable( mdl, u_Ol[1:d,1:N])
-        @variable( mdl, a_Ol[1:3])
+        @variable( mdl, a_Ol[1:6])
         @variable( mdl, lamb[1:SSdim,1])
 
         setvalue(a_Ol[1],Mean[1,1])
         setvalue(a_Ol[2],Mean[1,2])
-        setvalue(a_Ol[3],Mean[2,2])
+        setvalue(a_Ol[3],Mean[2,1])
+        setvalue(a_Ol[4],Mean[2,2])
+        setvalue(a_Ol[5],Mean[1,3])
+        setvalue(a_Ol[6],Mean[2,3])
 
         @NLparameter(mdl, x0[1:n] == 0)
         @NLparameter(mdl, SS[1:n,1:SSdim] == 0)
         @NLparameter(mdl, Qfun[1:SSdim] == 0)
-        @NLparameter(mdl, Mean[1:2,1:2] == 0)
+        @NLparameter(mdl, Mean[1:2,1:3] == 0)
         @NLparameter(mdl, Variance[1:2] == 0)
+
+
 
         # System dynamics
         @NLconstraint(mdl, [i=1:n], x_Ol[i,1] == x0[i])         # initial condition
@@ -53,15 +58,15 @@ type LMPC_Model
         # System dynamics
 
         for i=1:N           
-            @NLconstraint(mdl, x_Ol[1,i+1] == a_Ol[1] * x_Ol[1,i] + a_Ol[2] * x_Ol[2,i])
-            @NLconstraint(mdl, x_Ol[2,i+1] ==    0                + a_Ol[3] * x_Ol[2,i] + B[2]*u_Ol[1,i])
+            @NLconstraint(mdl, x_Ol[1,i+1] == a_Ol[1] * x_Ol[1,i] + a_Ol[2] * x_Ol[2,i] + a_Ol[5] * u_Ol[1,i])
+            @NLconstraint(mdl, x_Ol[2,i+1] == a_Ol[3] * x_Ol[1,i] + a_Ol[4] * x_Ol[2,i] + a_Ol[6] * u_Ol[1,i])
         end
 
         for i=1:N            
-            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] >= -3*Variance[1])
-            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] <=  3*Variance[1])
-            @NLconstraint(mdl, (a_Ol[3] - Mean[2,2]) * x_Ol[2,i] >= -3*Variance[2])
-            @NLconstraint(mdl, (a_Ol[3] - Mean[2,2]) * x_Ol[2,i] <=  3*Variance[2])
+            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] >= -1*Variance[1])
+            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] <=  1*Variance[1])
+            @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] >= -1*Variance[2])
+            @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] <=  1*Variance[2])
         end
 
         # Constratints Related with the LMPC
@@ -83,7 +88,10 @@ type LMPC_Model
         @NLexpression(mdl, input_cost, sum{ (R[1,1] * u_Ol[1,i])^2, i=1:N} 
                                             + 0.000001*(a_Ol[1] - Mean[1,1])^2
                                             + 0.000001*(a_Ol[2] - Mean[1,2])^2
-                                            + 0.000001*(a_Ol[3] - Mean[2,2])^2)
+                                            + 0.000001*(a_Ol[3] - Mean[2,2])^2
+                                            + 0.000001*(a_Ol[4] - Mean[2,1])^2
+                                            + 0.000001*(a_Ol[5] - Mean[1,3])^2
+                                            + 0.000001*(a_Ol[6] - Mean[2,3])^2)
 
         # Control Input cost
         @NLexpression(mdl, termi_cost, sum{ Qfun[j] * lamb[j,1] ,j=1:SSdim})
