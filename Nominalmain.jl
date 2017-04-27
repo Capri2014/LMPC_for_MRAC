@@ -6,8 +6,8 @@ using JLD
 using PyPlot
 
 include("classes.jl")
-include("LMPC_models.jl")
-include("SolveLMPCProblem.jl")
+include("NominalLMPC_models.jl")
+include("SolveNominalLMPCProblem.jl")
 include("ComputeFeasibleTraj.jl")
 include("ComputeCost.jl")
 
@@ -116,7 +116,7 @@ while (abs(Difference) > (1e-7))&&(it<20)
     cost_LMPC   = ones(1,500)
 
     # Define the model at the j-th iteration (Need to define it at each iterations as SS and Q function change)
-    mdl    = LMPC_Model(LMPCparams,SystemParams, SSdim, MeanEstimate, MSE)
+    mdl    = NominalLMPC_Model(LMPCparams,SystemParams, SSdim, MeanEstimate)
     
     # ========================================================================================================
     # ===================== Enter the time loop for the LMPC at the j-th iteration ===========================
@@ -132,11 +132,9 @@ while (abs(Difference) > (1e-7))&&(it<20)
     while t<40#((Max_x > (10))&&(t<Buffer-1))
         # 
         if t == 1
-            #solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun, MeanEstimate, MSE) 
-            solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun, MeanEstimate, MSE) 
+            solveNominalLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun, MeanEstimate) 
         else
-            #solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun, MeanEstimate, MSE) 
-            solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun, MeanEstimate, MSE) 
+            solveNominalLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun, MeanEstimate) 
         end
         Noise = 1*[2*randn(); 3*randn()]
         
@@ -148,7 +146,7 @@ while (abs(Difference) > (1e-7))&&(it<20)
 
         Max_x = max(abs(x_LMPC[1,t+1]), abs(x_LMPC[2,t+1]) )
         cost_LMPC[t+1] = LMPCSol.cost
-        println("LMPC cost at step ",t, " of iteration ", it," is ", cost_LMPC[t+1], " and Estimte is ", LMPCSol.a)
+        println("LMPC cost at step ",t, " of iteration ", it," is ", cost_LMPC[t+1], " and Estimte is ", MeanEstimate)
         println("Value ", x_LMPC[:,t+1])
 
         t=t+1    
