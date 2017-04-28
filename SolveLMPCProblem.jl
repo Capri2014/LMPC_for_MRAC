@@ -19,6 +19,6 @@ function solveLMPCProblem(mdl::LMPC_Model,LMPCSol::TypeLMPCSol,xCurr::Array{Floa
 
     LMPCSol.cost = getvalue(mdl.state_cost) + getvalue(mdl.input_cost) + getvalue(mdl.termi_cost)
 
-    println("Solved, status = $sol_status")
+    # println("Solved, status = $sol_status")
     nothing
 end

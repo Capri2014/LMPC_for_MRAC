@@ -1,9 +1,5 @@
-using JuMP
-using Ipopt
-using JLD
-using PyPlot
-using JLD
-using PyPlot
+function DifferentTrials()
+
 
 include("classes.jl")
 include("LMPC_models.jl")
@@ -28,8 +24,8 @@ d = 1
 Ar = [1.6 0.9; 
       0.0 1.8]
 
-Ar = [0.6 0.9; 
-      0.0 0.8]
+# Ar = [0.6 0.9; 
+#       0.0 0.8]
 
 B  = [0.0, 1.0]
 
@@ -40,7 +36,7 @@ SystemParams.n  = n
 SystemParams.d  = d
 
 
-LMPCparams.N  = 3
+LMPCparams.N  = 4
 LMPCparams.Q  = [1.0 0.0; 
                  0.0 1.0]
 
@@ -55,8 +51,9 @@ x0          = [-38.0, -25.0]
 
 
 # Compute First Feasible Iteration    
-K_r    = -[1.1396; 2.2270]
-K_r    = -[0.5; 0.7]
+# K_r    = -[1.1396; 2.2270]
+K_r    = -[2.0679; 2.9627]
+# K_r    = -[0.5; 0.7]
 
 x_feasible, u_feasible, MeanEstimate, MSE = Feasible_Traj(SystemParams, x0, K_r)
 x_feasible, u_feasible, NMeanEstimate, NMSE = Feasible_Traj(SystemParams, x0, K_r)
@@ -165,8 +162,8 @@ while (abs(Difference) > (1e-7))&&(it<10)
     t = 1
     Max_x = 100000
 
-    println("MeanEstimate", MeanEstimate, "Variance ", MSE)
-    println("Nominal MeanEstimate", NMeanEstimate, "Nominal Variance ", NMSE)
+    # println("MeanEstimate", MeanEstimate, "Variance ", MSE)
+    # println("Nominal MeanEstimate", NMeanEstimate, "Nominal Variance ", NMSE)
 
     SaveMean[:,:,it] = MeanEstimate
     SaveVari[:,:,it] = MSE
@@ -184,12 +181,12 @@ while (abs(Difference) > (1e-7))&&(it<10)
             solveLMPCProblem( mdl, LMPCSol,  x_LMPC[:,t],  ConvSS,  ConvQfun,  MeanEstimate,  MSE) 
             solveNominalLMPCProblem(Nmdl,NLMPCSol, x_NLMPC[:,t], NConvSS, NConvQfun, NMeanEstimate) 
         end
-        Noise = 1*[2*randn(), 3*randn()]
+        Noise = 2*[2*randn(), 3*randn()]
         
         u_LMPC[:,t]   =  LMPCSol.u[:,1]
         u_NLMPC[:,t]  = NLMPCSol.u[:,1]
 
-        x_LMPC[:,t+1]   = Ar * x_LMPC[:,t]  + *([0;1], u_LMPC[1,t]) +  Noise#[Noise[1]*x_LMPC[1,t]; Noise[2]*x_LMPC[2,t]]*0.1
+        x_LMPC[:,t+1]   = Ar * x_LMPC[:,t]  + *([0;1], u_LMPC[1,t]) + Noise#[Noise[1]*x_LMPC[1,t]; Noise[2]*x_LMPC[2,t]]*0.1
         x_NLMPC[:,t+1]  = Ar * x_NLMPC[:,t] + *([0;1], u_NLMPC[1,t]) + Noise#[Noise[1]*x_NLMPC[1,t]; Noise[2]*x_NLMPC[2,t]]*0.1
 
         OptU[1,t,it] = - dot([1.49455, 2.50961], OptX[:,t,it])
@@ -197,14 +194,14 @@ while (abs(Difference) > (1e-7))&&(it<10)
 
         Max_x = max(abs(x_LMPC[1,t+1]), abs(x_LMPC[2,t+1]) )
         cost_LMPC[t+1] = LMPCSol.cost
-        println("LMPC cost at step ",t, " of iteration ", it," is ", cost_LMPC[t+1], " and Estimte is ", LMPCSol.a)
-        println("Value ", x_LMPC[:,t+1])
+        # println("LMPC cost at step ",t, " of iteration ", it," is ", cost_LMPC[t+1], " and Estimte is ", LMPCSol.a)
+        # println("Value ", x_LMPC[:,t+1])
 
         # System ID at time t
         MeanEstimate,   MSE = SystemID_Inloop( time,t, it, SS,  x_LMPC,  OldU,  u_LMPC)
-        NMeanEstimate, NMSE = SystemID_Inloop( time,t, it,NSS,  x_NLMPC,OldNU, u_NLMPC)
+        NMeanEstimate, NMSE = SystemID_Inloop( time,t, it, NSS,  x_NLMPC,OldNU, u_NLMPC)
 
-        println("Estimte is ", MeanEstimate)
+        # println("Estimte is ", MeanEstimate)
         t=t+1
     end
     # ========================================================================================================
@@ -260,4 +257,11 @@ legend()
 for i = 2:it-1
     println(i,"-th itearion cost LMPC; ", Qfun[1,1,i], " Nominal ", NQfun[1,1,i], "LMPC-Nominal ", Qfun[1,1,i]-NQfun[1,1,i])
     println(i,"-th itearion cost; ", OptQ[1,1,i])
+end
+Val = zeros(20,1)
+for i = 2:it-1
+    Val[i,1] = Qfun[1,1,i]-NQfun[1,1,i]
+end
+
+    return Val
 end

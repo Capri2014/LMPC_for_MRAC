@@ -17,6 +17,6 @@ function solveNominalLMPCProblem(mdl::NominalLMPC_Model,LMPCSol::TypeLMPCSol,xCu
 
     LMPCSol.cost = getvalue(mdl.state_cost) + getvalue(mdl.input_cost) + getvalue(mdl.termi_cost)
 
-    println("Solved, status = $sol_status")
+    # println("Solved, status = $sol_status")
     nothing
 end

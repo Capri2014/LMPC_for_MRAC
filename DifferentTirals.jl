@@ -1,3 +1,5 @@
+function DifferentTrials(mdl::LMPC_Model,LMPCSol::TypeLMPCSol,xCurr::Array{Float64,1},ConvSS::Array{Float64,2},ConvQfun::Array{Float64,1},Mean::Array{Float64,2},Variance::Array{Float64,1})
+
 using JuMP
 using Ipopt
 using JLD
@@ -28,9 +30,6 @@ d = 1
 Ar = [1.6 0.9; 
       0.0 1.8]
 
-Ar = [0.6 0.9; 
-      0.0 0.8]
-
 B  = [0.0, 1.0]
 
 SystemParams.Ar  = Ar
@@ -56,7 +55,6 @@ x0          = [-38.0, -25.0]
 
 # Compute First Feasible Iteration    
 K_r    = -[1.1396; 2.2270]
-K_r    = -[0.5; 0.7]
 
 x_feasible, u_feasible, MeanEstimate, MSE = Feasible_Traj(SystemParams, x0, K_r)
 x_feasible, u_feasible, NMeanEstimate, NMSE = Feasible_Traj(SystemParams, x0, K_r)
@@ -189,11 +187,11 @@ while (abs(Difference) > (1e-7))&&(it<10)
         u_LMPC[:,t]   =  LMPCSol.u[:,1]
         u_NLMPC[:,t]  = NLMPCSol.u[:,1]
 
-        x_LMPC[:,t+1]   = Ar * x_LMPC[:,t]  + *([0;1], u_LMPC[1,t]) +  Noise#[Noise[1]*x_LMPC[1,t]; Noise[2]*x_LMPC[2,t]]*0.1
-        x_NLMPC[:,t+1]  = Ar * x_NLMPC[:,t] + *([0;1], u_NLMPC[1,t]) + Noise#[Noise[1]*x_NLMPC[1,t]; Noise[2]*x_NLMPC[2,t]]*0.1
+        x_LMPC[:,t+1]   = Ar * x_LMPC[:,t]  + *([0;1], u_LMPC[1,t]) + [Noise[1]*x_LMPC[1,t]; Noise[2]*x_LMPC[2,t]]*0.1
+        x_NLMPC[:,t+1]  = Ar * x_NLMPC[:,t] + *([0;1], u_NLMPC[1,t]) + [Noise[1]*x_NLMPC[1,t]; Noise[2]*x_NLMPC[2,t]]*0.1
 
         OptU[1,t,it] = - dot([1.49455, 2.50961], OptX[:,t,it])
-        OptX[:,t+1,it]  = Ar * OptX[:,t,it] + [0;1]* OptU[1,t,it] + Noise#[Noise[1]*OptX[1,t,it]; Noise[2]*OptX[2,t,it]]*0.1
+        OptX[:,t+1,it]  = Ar * OptX[:,t,it] + [0;1]* OptU[1,t,it] + [Noise[1]*OptX[1,t,it]; Noise[2]*OptX[2,t,it]]*0.1
 
         Max_x = max(abs(x_LMPC[1,t+1]), abs(x_LMPC[2,t+1]) )
         cost_LMPC[t+1] = LMPCSol.cost
@@ -201,8 +199,8 @@ while (abs(Difference) > (1e-7))&&(it<10)
         println("Value ", x_LMPC[:,t+1])
 
         # System ID at time t
-        MeanEstimate,   MSE = SystemID_Inloop( time,t, it, SS,  x_LMPC,  OldU,  u_LMPC)
-        NMeanEstimate, NMSE = SystemID_Inloop( time,t, it,NSS,  x_NLMPC,OldNU, u_NLMPC)
+        MeanEstimate,   MSE = SystemID_Inloop( time,t, SS,  x_LMPC,  OldU,  u_LMPC)
+        NMeanEstimate, NMSE = SystemID_Inloop( time,t,NSS,  x_NLMPC,OldNU, u_NLMPC)
 
         println("Estimte is ", MeanEstimate)
         t=t+1
@@ -227,9 +225,9 @@ while (abs(Difference) > (1e-7))&&(it<10)
 
     Difference = Qfun[1,1,it-1]-Qfun[1,1,it]
 
-    MeanEstimate, Variance = SystemID_Outloop(time, it, SS, OldU)
+    MeanEstimate, Variance = SystemID_Outloop(time, SS, OldU)
 
-    NMeanEstimate, NVariance = SystemID_Outloop(time, it, NSS, OldNU)
+    NMeanEstimate, NVariance = SystemID_Outloop(time, NSS, OldNU)
     it = it + 1
 
 end
@@ -260,4 +258,7 @@ legend()
 for i = 2:it-1
     println(i,"-th itearion cost LMPC; ", Qfun[1,1,i], " Nominal ", NQfun[1,1,i], "LMPC-Nominal ", Qfun[1,1,i]-NQfun[1,1,i])
     println(i,"-th itearion cost; ", OptQ[1,1,i])
+end
+
+    return Qfun[1,1,i]-NQfun[1,1,i]
 end
