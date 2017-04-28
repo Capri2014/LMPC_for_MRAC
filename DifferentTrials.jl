@@ -200,8 +200,8 @@ it = it - 1
 
 figure()
 hold(1)
-plot(x_LMPC[1,:]',x_LMPC[2,:]', "-ro", label="x_LMPC")
-plot(x_NLMPC[1,:]',x_NLMPC[2,:]', "-ks", label="x_NLMPC")
+plot(x_LMPC[1,:]',x_LMPC[2,:]', "-ro", label="Optimist Controller")
+plot(x_NLMPC[1,:]',x_NLMPC[2,:]', "-ks", label="Nominal MPC")
 legend()
 
 for i = 1:it
