@@ -1,12 +1,10 @@
-function solveLMPCProblem(mdl::LMPC_Model,LMPCSol::TypeLMPCSol,xCurr::Array{Float64,1},ConvSS::Array{Float64,2},ConvQfun::Array{Float64,1},Mean::Array{Float64,2},Variance::Array{Float64,1})
+function solveLMPCProblem(mdl::LMPC_Model,LMPCSol::TypeLMPCSol,xCurr::Array{Float64,1},Mean::Array{Float64,2},Variance::Array{Float64,1})
 
     # Load Parameters
     sol_status::Symbol
 
     # Update current initial condition, curvature and previous input
     setvalue(mdl.x0,xCurr)
-    setvalue(mdl.SS,ConvSS)
-    setvalue(mdl.Qfun,ConvQfun)
     setvalue(mdl.Mean,Mean)
     setvalue(mdl.Variance,Variance)
 
@@ -17,8 +15,8 @@ function solveLMPCProblem(mdl::LMPC_Model,LMPCSol::TypeLMPCSol,xCurr::Array{Floa
     LMPCSol.u    = getvalue(mdl.u_Ol)
     LMPCSol.a    = getvalue(mdl.a_Ol)
 
-    LMPCSol.cost = getvalue(mdl.state_cost) + getvalue(mdl.input_cost) + getvalue(mdl.termi_cost)
+    LMPCSol.cost = getvalue(mdl.state_cost) + getvalue(mdl.input_cost)
 
-    # println("Solved, status = $sol_status")
+    # println("LMPC Solved, status = $sol_status")
     nothing
 end

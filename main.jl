@@ -184,16 +184,16 @@ while (abs(Difference) > (1e-7))&&(it<10)
             solveLMPCProblem( mdl, LMPCSol,  x_LMPC[:,t],  ConvSS,  ConvQfun,  MeanEstimate,  MSE) 
             solveNominalLMPCProblem(Nmdl,NLMPCSol, x_NLMPC[:,t], NConvSS, NConvQfun, NMeanEstimate) 
         end
-        Noise = 1*[2*randn(), 3*randn()]
+        Noise = 2*[2*randn(), 3*randn()]
         
         u_LMPC[:,t]   =  LMPCSol.u[:,1]
         u_NLMPC[:,t]  = NLMPCSol.u[:,1]
 
-        x_LMPC[:,t+1]   = Ar * x_LMPC[:,t]  + *([0;1], u_LMPC[1,t]) +  Noise#[Noise[1]*x_LMPC[1,t]; Noise[2]*x_LMPC[2,t]]*0.1
-        x_NLMPC[:,t+1]  = Ar * x_NLMPC[:,t] + *([0;1], u_NLMPC[1,t]) + Noise#[Noise[1]*x_NLMPC[1,t]; Noise[2]*x_NLMPC[2,t]]*0.1
+        x_LMPC[:,t+1]   = Ar * x_LMPC[:,t]  + *([0;1], u_LMPC[1,t]) +  [Noise[1]*x_LMPC[1,t]; Noise[2]*x_LMPC[2,t]]*0.1
+        x_NLMPC[:,t+1]  = Ar * x_NLMPC[:,t] + *([0;1], u_NLMPC[1,t]) + [Noise[1]*x_NLMPC[1,t]; Noise[2]*x_NLMPC[2,t]]*0.1
 
         OptU[1,t,it] = - dot([1.49455, 2.50961], OptX[:,t,it])
-        OptX[:,t+1,it]  = Ar * OptX[:,t,it] + [0;1]* OptU[1,t,it] + Noise#[Noise[1]*OptX[1,t,it]; Noise[2]*OptX[2,t,it]]*0.1
+        OptX[:,t+1,it]  = Ar * OptX[:,t,it] + [0;1]* OptU[1,t,it] + [Noise[1]*OptX[1,t,it]; Noise[2]*OptX[2,t,it]]*0.1
 
         Max_x = max(abs(x_LMPC[1,t+1]), abs(x_LMPC[2,t+1]) )
         cost_LMPC[t+1] = LMPCSol.cost

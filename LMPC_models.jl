@@ -2,8 +2,6 @@ type LMPC_Model
     mdl::JuMP.Model
 
     x0::Array{JuMP.NonlinearParameter,1}
-    SS::Array{JuMP.NonlinearParameter,2}
-    Qfun::Array{JuMP.NonlinearParameter,1}
     Mean::Array{JuMP.NonlinearParameter,2}
     Variance::Array{JuMP.NonlinearParameter,1}
 
@@ -14,9 +12,8 @@ type LMPC_Model
 
     state_cost::JuMP.NonlinearExpression
     input_cost::JuMP.NonlinearExpression
-    termi_cost::JuMP.NonlinearExpression
 
-    function LMPC_Model(LMPCparams::TypeLMPCparams,SystemParams::TypeSystemParams, SSdim::Int64, Mean::Array{Float64,2}, Variance::Array{Float64,1})
+    function LMPC_Model(LMPCparams::TypeLMPCparams,SystemParams::TypeSystemParams)
         println("Starting creation")
         m = new()
         B          = SystemParams.B
@@ -34,7 +31,6 @@ type LMPC_Model
         @variable( mdl, x_Ol[1:n,1:(N+1)]) 
         @variable( mdl, u_Ol[1:d,1:N])
         @variable( mdl, a_Ol[1:6])
-        @variable( mdl, lamb[1:SSdim,1])
 
         # setvalue(a_Ol[1],Mean[1,1])
         # setvalue(a_Ol[2],Mean[1,2])
@@ -44,8 +40,6 @@ type LMPC_Model
         # setvalue(a_Ol[6],Mean[2,3])
 
         @NLparameter(mdl, x0[1:n] == 0)
-        @NLparameter(mdl, SS[1:n,1:SSdim] == 0)
-        @NLparameter(mdl, Qfun[1:SSdim] == 0)
         @NLparameter(mdl, Mean[1:2,1:3] == 0)
         @NLparameter(mdl, Variance[1:2] == 0)
 
@@ -65,22 +59,18 @@ type LMPC_Model
         @NLconstraint(mdl, a_Ol[1]^2 + a_Ol[2]^2 + a_Ol[3]^2 + 
                            a_Ol[4]^2 + a_Ol[5]^2 + a_Ol[6]^2 <= 100)
 
-        for i=1:N            
-            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] >= -0.1*Variance[1])
-            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] <=  0.1*Variance[1])
-            @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] >= -0.1*Variance[2])
-            @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] <=  0.1*Variance[2])
-        end
+        # for i=1:N            
+        #     @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] >= -0.1*Variance[1])
+        #     @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] <=  0.1*Variance[1])
+        #     @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] >= -0.1*Variance[2])
+        #     @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] <=  0.1*Variance[2])
+        # end
 
         # Constratints Related with the LMPC
-        for j=1:SSdim
-            setlowerbound(lamb[j,1], 0)
-        end
-        @NLconstraint(mdl,sum{lamb[j,1], j = 1:SSdim} == 1)
 
 
-        @NLconstraint(mdl, x_Ol[1,N+1] == sum{SS[1,k] * lamb[k,1], k = 1:SSdim})        
-        @NLconstraint(mdl, x_Ol[2,N+1] == sum{SS[2,k] * lamb[k,1], k = 1:SSdim})         
+        # @NLconstraint(mdl, x_Ol[1,N+1] == sum{SS[1,k] * lamb[k,1], k = 1:SSdim})        
+        # @NLconstraint(mdl, x_Ol[2,N+1] == sum{SS[2,k] * lamb[k,1], k = 1:SSdim})         
        
         # Cost definitions
         # State cost
@@ -97,11 +87,11 @@ type LMPC_Model
                                             # + 0.00001*(a_Ol[6] - Mean[2,3])^2)
 
         # Control Input cost
-        @NLexpression(mdl, termi_cost, sum{ Qfun[j] * lamb[j,1] ,j=1:SSdim})
+        # @NLexpression(mdl, termi_cost, sum{ Qfun[j] * lamb[j,1] ,j=1:SSdim})
 
 
         # Objective function
-        @NLobjective(mdl, Min, state_cost + input_cost + termi_cost)
+        @NLobjective(mdl, Min, state_cost + input_cost )
 
         # First solve
         #sol_stat=solve(mdl)
@@ -111,8 +101,6 @@ type LMPC_Model
         
         m.mdl  = mdl
         m.x0   = x0
-        m.Qfun = Qfun
-        m.SS   = SS
         m.Variance = Variance
         m.Mean   = Mean
 
@@ -122,7 +110,6 @@ type LMPC_Model
 
         m.state_cost = state_cost
         m.input_cost = input_cost
-        m.termi_cost = termi_cost
         
         return m
     end
