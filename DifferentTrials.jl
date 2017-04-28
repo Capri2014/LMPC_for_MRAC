@@ -24,8 +24,13 @@ d = 1
 Ar = [1.6 0.9; 
       0.0 1.8]
 
-# Ar = [0.6 0.9; 
-#       0.0 0.8]
+Ar = [0.6 0.9; 
+      0.0 0.8]
+
+# Compute First Feasible Iteration    
+# K_r    = -[1.1396; 2.2270]
+# K_r    = -[2.0679; 2.9627]
+K_r    = -[0.5; 0.7]
 
 B  = [0.0, 1.0]
 
@@ -47,13 +52,10 @@ LMPCparams.R  = [1.0 0.0;
                  0.0 1.0]
 
 
-x0          = [-38.0, -25.0]
+x0          = [-10.0, -10.0]
 
 
-# Compute First Feasible Iteration    
-# K_r    = -[1.1396; 2.2270]
-K_r    = -[2.0679; 2.9627]
-# K_r    = -[0.5; 0.7]
+
 
 x_feasible, u_feasible, MeanEstimate, MSE = Feasible_Traj(SystemParams, x0, K_r)
 x_feasible, u_feasible, NMeanEstimate, NMSE = Feasible_Traj(SystemParams, x0, K_r)
@@ -144,8 +146,8 @@ while (abs(Difference) > (1e-7))&&(it<10)
     # Here start the iteration
     x_LMPC      = zeros(n,Buffer)
     x_LMPC[:,1] = x_feasible[:,1]
-    Nx_LMPC      = zeros(n,Buffer)
-    Nx_LMPC[:,1] = x_feasible[:,1]
+    x_NLMPC      = zeros(n,Buffer)
+    x_NLMPC[:,1] = x_feasible[:,1]
 
     OptX[:,1,it]= x_feasible[:,1]
 
@@ -178,6 +180,9 @@ while (abs(Difference) > (1e-7))&&(it<10)
             solveNominalLMPCProblem(Nmdl,NLMPCSol, x_NLMPC[:,t], NConvSS, NConvQfun, NMeanEstimate) 
         else
             #solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun, MeanEstimate, MSE) 
+            # println(MeanEstimate, MSE)
+            # println(NMeanEstimate, NMSE)
+            
             solveLMPCProblem( mdl, LMPCSol,  x_LMPC[:,t],  ConvSS,  ConvQfun,  MeanEstimate,  MSE) 
             solveNominalLMPCProblem(Nmdl,NLMPCSol, x_NLMPC[:,t], NConvSS, NConvQfun, NMeanEstimate) 
         end
@@ -224,22 +229,22 @@ while (abs(Difference) > (1e-7))&&(it<10)
 
     Difference = Qfun[1,1,it-1]-Qfun[1,1,it]
 
-    MeanEstimate, Variance = SystemID_Outloop(time, it, SS, OldU)
+    MeanEstimate, MSE = SystemID_Outloop(time, it, SS, OldU)
 
-    NMeanEstimate, NVariance = SystemID_Outloop(time, it, NSS, OldNU)
+    NMeanEstimate, NMSE = SystemID_Outloop(time, it, NSS, OldNU)
     it = it + 1
 
 end
 it = it - 1
 
-figure()
-hold(1)
-for i = 1:it-1
-    plot(SS[1,:,i]',SS[2,:,i]', "-ks", label="SS")
-end
-plot(x_LMPC[1,:]',x_LMPC[2,:]', "-ro", label="x_LMPC")
-plot(OptX[1,:,it]',OptX[2,:,it]', "-g*", label="Opt")
-legend()
+# figure()
+# hold(1)
+# for i = 1:it-1
+#     plot(SS[1,:,i]',SS[2,:,i]', "-ks", label="SS")
+# end
+# plot(x_LMPC[1,:]',x_LMPC[2,:]', "-ro", label="x_LMPC")
+# plot(OptX[1,:,it]',OptX[2,:,it]', "-g*", label="Opt")
+# legend()
 
 figure()
 index = it
@@ -253,6 +258,7 @@ plot(SS[1,:,index]',SS[2,:,index]', "-ko", label="x_LMPC it 2")
 plot(NSS[1,:,index]',NSS[2,:,index]', "-ro", label="x_NLMPC it 2")
 plot(OptX[1,:,index]',OptX[2,:,index]', "-g*", label="Opt")
 legend()
+
 
 for i = 2:it-1
     println(i,"-th itearion cost LMPC; ", Qfun[1,1,i], " Nominal ", NQfun[1,1,i], "LMPC-Nominal ", Qfun[1,1,i]-NQfun[1,1,i])

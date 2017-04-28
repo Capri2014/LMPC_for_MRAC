@@ -14,9 +14,9 @@ for i = 1:50
     println(i)
     Dummy = DifferentTrials()
     Val = Val + Dummy
-    println(Val)
+    println("Cumulate", Val)
 end
 
-Mean = Val/(10+1)
+Mean = Val/(50+1)
 
-println(Val)
+println("Mean",Mean)

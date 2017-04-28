@@ -5,8 +5,8 @@ function Feasible_Traj(SystemParams::TypeSystemParams, x0::Array{Float64,1}, K_r
     n  = SystemParams.n
     d  = SystemParams.d
 
-    Points = 20
-    PointsSysID = 20
+    Points = 30
+    PointsSysID = 30
     
     x_real = zeros(n, Points+1)
     x_real[:,1] = x0
@@ -46,8 +46,8 @@ Matrix1 = vector_A1'*vector_A1
 Matrix2 = vector_A2'*vector_A2
 
 DimentionEye = size(Matrix1,1)
-Row1    = (Matrix1 + 0.00000001*eye(DimentionEye, DimentionEye) ) \ (vector_A1' * vector_b1)
-Row2    = (Matrix2 + 0.00000001*eye(DimentionEye, DimentionEye)) \ (vector_A2' * vector_b2)
+Row1    = (Matrix1 + 0.00001*eye(DimentionEye, DimentionEye) ) \ (vector_A1' * vector_b1)
+Row2    = (Matrix2 + 0.00001*eye(DimentionEye, DimentionEye)) \ (vector_A2' * vector_b2)
 
 MeanEstimate = zeros(2,3)
 MeanEstimate[1,:] = Row1

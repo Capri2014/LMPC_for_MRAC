@@ -25,8 +25,8 @@ function SystemID_Outloop(time::Array{Int64,1}, it::Int64, SS::Array{Float64,3},
 
 
     DimentionEye = size(Matrix1,1)
-    Row1    = (Matrix1 + 0.00000001*eye(DimentionEye, DimentionEye) ) \ (vector_A1' * vector_b1)
-    Row2    = (Matrix2 + 0.00000001*eye(DimentionEye, DimentionEye)) \ (vector_A2' * vector_b2)
+    Row1    = (Matrix1 + 0.00001*eye(DimentionEye, DimentionEye) ) \ (vector_A1' * vector_b1)
+    Row2    = (Matrix2 + 0.00001*eye(DimentionEye, DimentionEye)) \ (vector_A2' * vector_b2)
 
     
     MeanEstimate = zeros(2,3)
