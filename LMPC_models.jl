@@ -3,7 +3,9 @@ type LMPC_Model
 
     x0::Array{JuMP.NonlinearParameter,1}
     Mean::Array{JuMP.NonlinearParameter,2}
+    V::Array{JuMP.NonlinearParameter,2}
     Variance::Array{JuMP.NonlinearParameter,1}
+    beta::Array{JuMP.NonlinearParameter,1}
 
     x_Ol::Array{JuMP.Variable,2}
     u_Ol::Array{JuMP.Variable,2}
@@ -32,19 +34,19 @@ type LMPC_Model
         @variable( mdl, u_Ol[1:d,1:N])
         @variable( mdl, a_Ol[1:6])
 
+
+        @NLparameter(mdl, x0[1:n] == 0)
+        @NLparameter(mdl, Mean[1:2,1:3] == 0)
+        @NLparameter(mdl, V[1:3,1:3] == 0)
+        @NLparameter(mdl, beta[1:2] == 0)
+        @NLparameter(mdl, Variance[1:2] == 0)
+
         # setvalue(a_Ol[1],Mean[1,1])
         # setvalue(a_Ol[2],Mean[1,2])
         # setvalue(a_Ol[3],Mean[2,1])
         # setvalue(a_Ol[4],Mean[2,2])
         # setvalue(a_Ol[5],Mean[1,3])
         # setvalue(a_Ol[6],Mean[2,3])
-
-        @NLparameter(mdl, x0[1:n] == 0)
-        @NLparameter(mdl, Mean[1:2,1:3] == 0)
-        @NLparameter(mdl, Variance[1:2] == 0)
-
-
-
         # System dynamics
         @NLconstraint(mdl, [i=1:n], x_Ol[i,1] == x0[i])         # initial condition
         println("Initializing model...")
@@ -57,13 +59,21 @@ type LMPC_Model
         end
 
         @NLconstraint(mdl, a_Ol[1]^2 + a_Ol[2]^2 + a_Ol[3]^2 + 
-                           a_Ol[4]^2 + a_Ol[5]^2 + a_Ol[6]^2 <= 100)
+                           a_Ol[4]^2 + a_Ol[5]^2 + a_Ol[6]^2 <= 10)
 
+        @NLconstraint(mdl, V[1,1] *( (a_Ol[1]-Mean[1,1])^2 + (a_Ol[2]-Mean[1,2])^2 )   
+                          +V[2,2] *( (a_Ol[2]-Mean[1,2])^2 + (a_Ol[4]-Mean[2,2])^2 )   
+                          +V[3,3] *( (a_Ol[5]-Mean[1,3])^2 + (a_Ol[6]-Mean[2,3])^2 )
+                        +2*V[1,2] *( (a_Ol[1]-Mean[1,1]) * (a_Ol[2]-Mean[1,2]) + (a_Ol[4]-Mean[2,2]) * (a_Ol[3]-Mean[2,1]) ) 
+                        +2*V[1,3] *( (a_Ol[1]-Mean[1,1]) * (a_Ol[5]-Mean[1,3]) + (a_Ol[3]-Mean[2,1]) * (a_Ol[6]-Mean[2,3]) )
+                        +2*V[2,3] *( (a_Ol[3]-Mean[1,2]) * (a_Ol[5]-Mean[1,3]) + (a_Ol[4]-Mean[2,2]) * (a_Ol[6]-Mean[2,3]) ) <= beta[1])
+        
+       
         # for i=1:N            
-        #     @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] >= -0.1*Variance[1])
-        #     @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] <=  0.1*Variance[1])
-        #     @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] >= -0.1*Variance[2])
-        #     @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] <=  0.1*Variance[2])
+        #     @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] >= -Variance[1])
+        #     @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] <=  Variance[1])
+        #     @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] >= -Variance[2])
+        #     @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] <=  Variance[2])
         # end
 
         # Constratints Related with the LMPC
@@ -103,8 +113,11 @@ type LMPC_Model
         m.x0   = x0
         m.Variance = Variance
         m.Mean   = Mean
+        m.beta = beta
 
         m.x_Ol = x_Ol
+        m.V    = V
+
         m.u_Ol = u_Ol
         m.a_Ol = a_Ol
 

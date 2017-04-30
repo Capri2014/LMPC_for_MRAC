@@ -44,6 +44,19 @@ function SystemID_Inloop(t::Int64, x_LMPC::Array{Float64,2}, u_LMPC::Array{Float
         MSE[1] = MSE1[1]
         MSE[2] = MSE2[1]
 
-    return MeanEstimate, MSE
+        Vt = zeros(3,3)
+        Vt = 0.00000001*eye(3,3)
+        z = zeros(3,1)
+        for i = 1:t
+            z[1:2,1] = x_LMPC[1:2,i]
+            z[3,1]   = u_LMPC[1,i]
+            # println("Here z",z)
+            # println(z*z')
+            Vt = Vt + z*z'
+        end
+        beta = zeros(2)
+        beta[1] = ( 2*( 2*log( (det(Vt))^(1/2) * (0.00000001^3)^(-1/2) ) )^(1/2) + 10*(0.00000001)^(1/2) )
+        # println("Beta", beta[1])
+    return MeanEstimate, MSE, Vt, beta
     
 end
