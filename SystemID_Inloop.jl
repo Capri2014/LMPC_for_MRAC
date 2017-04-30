@@ -24,8 +24,8 @@ function SystemID_Inloop(t::Int64, x_LMPC::Array{Float64,2}, u_LMPC::Array{Float
 
 
         DimentionEye = size(Matrix1,1)
-        Row1    = (Matrix1 + 0.00000001*eye(DimentionEye, DimentionEye) ) \ (vector_A1' * vector_b1)
-        Row2    = (Matrix2 + 0.00000001*eye(DimentionEye, DimentionEye)) \ (vector_A2' * vector_b2)
+        Row1    = (Matrix1 + 0.1*eye(DimentionEye, DimentionEye) ) \ (vector_A1' * vector_b1)
+        Row2    = (Matrix2 + 0.1*eye(DimentionEye, DimentionEye)) \ (vector_A2' * vector_b2)
 
         MeanEstimate = zeros(2,3)
         MeanEstimate[1,:] = Row1
@@ -45,7 +45,7 @@ function SystemID_Inloop(t::Int64, x_LMPC::Array{Float64,2}, u_LMPC::Array{Float
         MSE[2] = MSE2[1]
 
         Vt = zeros(3,3)
-        Vt = 0.00000001*eye(3,3)
+        Vt = 0.1*eye(3,3)
         z = zeros(3,1)
         for i = 1:t
             z[1:2,1] = x_LMPC[1:2,i]
@@ -55,7 +55,7 @@ function SystemID_Inloop(t::Int64, x_LMPC::Array{Float64,2}, u_LMPC::Array{Float
             Vt = Vt + z*z'
         end
         beta = zeros(2)
-        beta[1] = ( 2*( 2*log( (det(Vt))^(1/2) * (0.00000001^3)^(-1/2) ) )^(1/2) + 10*(0.00000001)^(1/2) )
+        beta[1] = ( 2*( 2*log( (det(Vt))^(1/2) * (0.1^3)^(-1/2) ) )^(1/2) + 10*(0.1)^(1/2) )
         # println("Beta", beta[1])
     return MeanEstimate, MSE, Vt, beta
     

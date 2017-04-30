@@ -35,7 +35,7 @@ SystemParams.n  = n
 SystemParams.d  = d
 
 
-LMPCparams.N  = 4
+LMPCparams.N  = 10
 LMPCparams.Q  = [1.0 0.0; 
                  0.0 1.0]
 
@@ -105,28 +105,26 @@ while (abs(Difference) > (1e-7))&&(it<2)
     # ========================================================================================================
     # ===================== Enter the time loop for the LMPC at the j-th iteration ===========================
     # ========================================================================================================
-    t = 1
-    Noise = 5*[2*randn(), 3*randn()]
-    u_LMPC[:,t]   = 0.1
-    u_NLMPC[:,t]  = 0.1
+    for t=1:1
+        Noise = 5*[2*randn(), 3*randn()]
+        u_LMPC[:,t]   = randn()
+        u_NLMPC[:,t]  = randn()
 
-    x_LMPC[:,t+1]   = Ar * x_LMPC[:,t]  + *([0;1], u_LMPC[1,t]) + Noise # [Noise[1]*x_LMPC[1,t]; Noise[2]*x_LMPC[2,t]]*0.1
-    x_NLMPC[:,t+1]  = Ar * x_NLMPC[:,t] + *([0;1], u_NLMPC[1,t]) +Noise # [Noise[1]*x_NLMPC[1,t]; Noise[2]*x_NLMPC[2,t]]*0.1
+        x_LMPC[:,t+1]   = Ar * x_LMPC[:,t]  + *([0;1], u_LMPC[1,t]) + Noise # [Noise[1]*x_LMPC[1,t]; Noise[2]*x_LMPC[2,t]]*0.1
+        x_NLMPC[:,t+1]  = Ar * x_NLMPC[:,t] + *([0;1], u_NLMPC[1,t]) +Noise # [Noise[1]*x_NLMPC[1,t]; Noise[2]*x_NLMPC[2,t]]*0.1
 
-    OptU[1,t,it] = - dot([0.5, 0.7], OptX[:,t,it])
+        OptU[1,t,it] = - dot([0.5, 0.7], OptX[:,t,it])
 
-    # OptU[1,t,it] = - dot([1.49455, 2.50961], OptX[:,t,it])
-    OptX[:,t+1,it]  = Ar * OptX[:,t,it] + [0;1]* OptU[1,t,it] +Noise # [Noise[1]*OptX[1,t,it]; Noise[2]*OptX[2,t,it]]*0.1
-
-    
+        # OptU[1,t,it] = - dot([1.49455, 2.50961], OptX[:,t,it])
+        OptX[:,t+1,it]  = Ar * OptX[:,t,it] + [0;1]* OptU[1,t,it] +Noise # [Noise[1]*OptX[1,t,it]; Noise[2]*OptX[2,t,it]]*0.1
+    end
     # println("x ",x_LMPC, "u ", u_LMPC)
     # println("x ",x_NLMPC, "u ", u_NLMPC)
-    
+    t = 2
     MeanEstimate, Variance, Vt, beta = SystemID_Inloop(t, x_LMPC, u_LMPC)
     NMeanEstimate, NVariance = SystemID_Inloop(t, x_NLMPC, u_NLMPC)
     # println(MeanEstimate, Variance)
 
-    t = 2
     # println("MeanEstimate", MeanEstimate, "Variance ", MSE)
     # println("Nominal MeanEstimate", NMeanEstimate, "Nominal Variance ", NMSE)
 
@@ -134,13 +132,15 @@ while (abs(Difference) > (1e-7))&&(it<2)
     SaveVari[:,:,it] = Variance
     NSaveMean[:,:,it] = NMeanEstimate
     NSaveVari[:,:,it] = NVariance
-    
+
+    solveLMPCProblem( mdl, LMPCSol,  x_LMPC[:,t],  MeanEstimate,  Variance, Vt, beta) 
+    println("Starting loop", Variance, MeanEstimate)
     while t<50#((Max_x > (10))&&(t<Buffer-1))
         # 
         if t == 1
             #solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun, MeanEstimate, MSE) 
-            solveLMPCProblem( mdl, LMPCSol,  x_LMPC[:,t],  ConvSS,  ConvQfun,  MeanEstimate,  Variance, Vt, beta) 
-            solveNominalLMPCProblem(Nmdl,NLMPCSol, x_NLMPC[:,t], NConvSS, NConvQfun, NMeanEstimate) 
+            solveLMPCProblem( mdl, LMPCSol,  x_LMPC[:,t],  MeanEstimate,  Variance, Vt, beta) 
+            solveNominalLMPCProblem(Nmdl,NLMPCSol, x_NLMPC[:,t], NMeanEstimate) 
         else
             #solveLMPCProblem(mdl,LMPCSol, x_LMPC[:,t], ConvSS, ConvQfun, MeanEstimate, MSE) 
             solveLMPCProblem( mdl, LMPCSol,  x_LMPC[:,t],  MeanEstimate,  Variance, Vt, beta) 
@@ -152,11 +152,11 @@ while (abs(Difference) > (1e-7))&&(it<2)
         u_NLMPC[:,t]  = NLMPCSol.u[:,1]
         # println("Input LMPC ", u_LMPC[:,t], " Input Nominal ",u_NLMPC[:,t])
 
-        x_LMPC[:,t+1]   = Ar * x_LMPC[:,t]  + *([0;1], u_LMPC[1,t]) + [Noise[1]*x_LMPC[1,t]; Noise[2]*x_LMPC[2,t]]*0.1
-        x_NLMPC[:,t+1]  = Ar * x_NLMPC[:,t] + *([0;1], u_NLMPC[1,t]) + [Noise[1]*x_NLMPC[1,t]; Noise[2]*x_NLMPC[2,t]]*0.1
+        x_LMPC[:,t+1]   = Ar * x_LMPC[:,t]  + *([0;1], u_LMPC[1,t]) + Noise # [Noise[1]*x_LMPC[1,t]; Noise[2]*x_LMPC[2,t]]*0.1
+        x_NLMPC[:,t+1]  = Ar * x_NLMPC[:,t] + *([0;1], u_NLMPC[1,t]) + Noise # [Noise[1]*x_NLMPC[1,t]; Noise[2]*x_NLMPC[2,t]]*0.1
 
         OptU[1,t,it] = - dot([1.49455, 2.50961], OptX[:,t,it])
-        OptX[:,t+1,it]  = Ar * OptX[:,t,it] + [0;1]* OptU[1,t,it] + [Noise[1]*OptX[1,t,it]; Noise[2]*OptX[2,t,it]]*0.1
+        OptX[:,t+1,it]  = Ar * OptX[:,t,it] + [0;1]* OptU[1,t,it] + Noise #  [Noise[1]*OptX[1,t,it]; Noise[2]*OptX[2,t,it]]*0.1
 
         cost_LMPC[t+1] = LMPCSol.cost
         # println("LMPC cost at step ",t, " of iteration ", it," is ", cost_LMPC[t+1], " and Estimte is ", LMPCSol.a)
