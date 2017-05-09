@@ -10,7 +10,7 @@ include("DifferentTrials.jl")
 
 Val = DifferentTrials()
 
-for i = 1:50
+for i = 1:2000
     println(i)
     Dummy = DifferentTrials()
     Val = Val + Dummy

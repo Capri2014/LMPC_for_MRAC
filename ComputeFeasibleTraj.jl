@@ -5,8 +5,8 @@ function Feasible_Traj(SystemParams::TypeSystemParams, x0::Array{Float64,1}, K_r
     n  = SystemParams.n
     d  = SystemParams.d
 
-    Points = 30
-    PointsSysID = 30
+    Points = 50
+    PointsSysID = 50
     
     x_real = zeros(n, Points+1)
     x_real[:,1] = x0
@@ -24,7 +24,7 @@ function Feasible_Traj(SystemParams::TypeSystemParams, x0::Array{Float64,1}, K_r
 
     for i = 1:Points
         u_real[:,i]   = dot(K_r, x_real[:,i])
-        Noise = 2*[2*randn(); 3*randn()]
+        Noise = 5*[2*randn(); 3*randn()]
         x_real[:,i+1] = Ar * x_real[:,i] + B * u_real[1,i] + Noise#[Noise[1] * x_real[1,i]; Noise[2] * x_real[2,i]]*0.1
         u_apply = B * u_real[1,i]
 
