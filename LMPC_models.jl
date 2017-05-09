@@ -58,10 +58,10 @@ type LMPC_Model
         end
 
         for i=1:N            
-            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] >= -3*Variance[1])
-            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] <=  3*Variance[1])
-            @NLconstraint(mdl, (a_Ol[3] - Mean[2,2]) * x_Ol[2,i] >= -3*Variance[2])
-            @NLconstraint(mdl, (a_Ol[3] - Mean[2,2]) * x_Ol[2,i] <=  3*Variance[2])
+            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] >= -0.1*Variance[1])
+            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] <=  0.1*Variance[1])
+            @NLconstraint(mdl, (a_Ol[3] - Mean[2,2]) * x_Ol[2,i] >= -0.1*Variance[2])
+            @NLconstraint(mdl, (a_Ol[3] - Mean[2,2]) * x_Ol[2,i] <=  0.1*Variance[2])
         end
 
         # Constratints Related with the LMPC
@@ -80,10 +80,10 @@ type LMPC_Model
         @NLexpression(mdl, state_cost, sum{sum{ (Q[j,j]  * x_Ol[j,i])^2  , i=1:N},j=1:2})
 
         # Control Input cost
-        @NLexpression(mdl, input_cost, sum{ (R[1,1] * u_Ol[1,i])^2, i=1:N} 
-                                            + 0.000001*(a_Ol[1] - Mean[1,1])^2
-                                            + 0.000001*(a_Ol[2] - Mean[1,2])^2
-                                            + 0.000001*(a_Ol[3] - Mean[2,2])^2)
+        @NLexpression(mdl, input_cost, sum{ (R[1,1] * u_Ol[1,i])^2, i=1:N})
+                                            # + 0.000001*(a_Ol[1] - Mean[1,1])^2
+                                            # + 0.000001*(a_Ol[2] - Mean[1,2])^2
+                                            # + 0.000001*(a_Ol[3] - Mean[2,2])^2)
 
         # Control Input cost
         @NLexpression(mdl, termi_cost, sum{ Qfun[j] * lamb[j,1] ,j=1:SSdim})
