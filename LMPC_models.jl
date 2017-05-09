@@ -34,18 +34,20 @@ type LMPC_Model
         @variable( mdl, u_Ol[1:d,1:N])
         @variable( mdl, a_Ol[1:6])
         
+        # setvalue(a_Ol[1],0)
+        # setvalue(a_Ol[2],0)
+        # setvalue(a_Ol[3],0)
+        # setvalue(a_Ol[4],0)
+        # setvalue(a_Ol[5],0)
+        # setvalue(a_Ol[6],0)
+
         @NLparameter(mdl, x0[1:n] == 0)
         @NLparameter(mdl, Mean[1:2,1:3] == 0)
         @NLparameter(mdl, V[1:3,1:3] == 0)
         @NLparameter(mdl, beta[1:2] == 0)
         @NLparameter(mdl, Variance[1:2] == 0)
 
-        # setvalue(a_Ol[1],Mean[1,1])
-        # setvalue(a_Ol[2],Mean[1,2])
-        # setvalue(a_Ol[3],Mean[2,1])
-        # setvalue(a_Ol[4],Mean[2,2])
-        # setvalue(a_Ol[5],Mean[1,3])
-        # setvalue(a_Ol[6],Mean[2,3])
+
 
 
 
@@ -61,7 +63,7 @@ type LMPC_Model
         end
 
         @NLconstraint(mdl, a_Ol[1]^2 + a_Ol[2]^2 + a_Ol[3]^2 + 
-                           a_Ol[4]^2 + a_Ol[5]^2 + a_Ol[6]^2 <= 10)
+                           a_Ol[4]^2 + a_Ol[5]^2 + a_Ol[6]^2 <= 100)
 
         # @NLconstraint(mdl, V[1,1] *( (a_Ol[1]-Mean[1,1])^2 + (a_Ol[3]-Mean[2,1])^2 )   
         #                   +V[2,2] *( (a_Ol[2]-Mean[1,2])^2 + (a_Ol[4]-Mean[2,2])^2 )   

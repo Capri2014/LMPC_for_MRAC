@@ -35,7 +35,7 @@ SystemParams.n  = n
 SystemParams.d  = d
 
 
-LMPCparams.N  = 10
+LMPCparams.N  = 5
 LMPCparams.Q  = [1.0 0.0; 
                  0.0 1.0]
 
