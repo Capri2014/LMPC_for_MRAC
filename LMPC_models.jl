@@ -63,14 +63,14 @@ type LMPC_Model
         end
 
         @NLconstraint(mdl, a_Ol[1]^2 + a_Ol[2]^2 + a_Ol[3]^2 + 
-                           a_Ol[4]^2 + a_Ol[5]^2 + a_Ol[6]^2 <= 8)
+                           a_Ol[4]^2 + a_Ol[5]^2 + a_Ol[6]^2 <= 100)
 
-        # for i=1:N            
-        #     @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] >= -0.05*Variance[1])
-        #     @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] <=  0.05*Variance[1])
-        #     @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] >= -0.05*Variance[2])
-        #     @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] <=  0.05*Variance[2])
-        # end
+        for i=1:N            
+            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] >= -0.1*Variance[1])
+            @NLconstraint(mdl, (a_Ol[1] - Mean[1,1]) * x_Ol[1,i] + (a_Ol[2] - Mean[1,2]) * x_Ol[2,i] + (a_Ol[5] - Mean[1,3]) * u_Ol[1,i] <=  0.1*Variance[1])
+            @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] >= -0.1*Variance[2])
+            @NLconstraint(mdl, (a_Ol[3] - Mean[2,1]) * x_Ol[1,i] + (a_Ol[4] - Mean[2,2]) * x_Ol[2,i] + (a_Ol[6] - Mean[2,3]) * u_Ol[1,i] <=  0.1*Variance[2])
+        end
 
         # Constratints Related with the LMPC
         for j=1:SSdim
