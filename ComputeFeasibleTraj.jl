@@ -10,7 +10,7 @@ include("SolveLMSProblem.jl")
     d  = SystemParams.d
 
     Points = 180
-    PointsSysID = 5
+    PointsSysID = 180
     
     x_real = zeros(n, Points+1)
     x_real[:,1] = x0
@@ -69,27 +69,27 @@ include("SolveLMSProblem.jl")
     x_feasible[6,i]   = K_tilda[1,2]
     x_feasible[7,i]   = K_tilda[2,2]
 
-Matrix = vector_A1'*vector_A1
-K12 = inv(Matrix) * vector_A1' * vector_b1
+# Matrix = vector_A1'*vector_A1
+# K12 = inv(Matrix) * vector_A1' * vector_b1
 
-Matrix = vector_A'*vector_A
-K22 = inv(Matrix) * vector_A' * vector_b
+# Matrix = vector_A'*vector_A
+# K22 = inv(Matrix) * vector_A' * vector_b
 
-for i = 1:Points
-    x_feasible[5,i]   = K12[1]
-    x_feasible[6,i]   = K12[2]
-    x_feasible[7,i]   = K22[1]
+# for i = 1:Points
+#     x_feasible[5,i]   = K12[1]
+#     x_feasible[6,i]   = K12[2]
+#     x_feasible[7,i]   = K22[1]
 
-end
-i = Points + 1
+# end
+# i = Points + 1
 
-x_feasible[5,i]   = K12[1]
-x_feasible[6,i]   = K12[2]
-x_feasible[7,i]   = K22[1]
+# x_feasible[5,i]   = K12[1]
+# x_feasible[6,i]   = K12[2]
+# x_feasible[7,i]   = K22[1]
 
-MatrixPlot = [K12[1] K12[2]; 0 K22]
-println("Estimated K_tilda", MatrixPlot)
-println("Real K_tilda", K_tilda)
+# MatrixPlot = [K12[1] K12[2]; 0 K22]
+# println("Estimated K_tilda", MatrixPlot)
+# println("Real K_tilda", K_tilda)
 
 return x_feasible, u_feasible
 
