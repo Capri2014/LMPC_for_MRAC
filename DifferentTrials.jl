@@ -186,7 +186,7 @@ while (abs(Difference) > (1e-7))&&(it<10)
             solveLMPCProblem( mdl, LMPCSol,  x_LMPC[:,t],  ConvSS,  ConvQfun,  MeanEstimate,  MSE) 
             solveNominalLMPCProblem(Nmdl,NLMPCSol, x_NLMPC[:,t], NConvSS, NConvQfun, NMeanEstimate) 
         end
-        Noise = 5*[2*randn(), 3*randn()]
+        Noise = 1*[2*randn(), 3*randn()]
         
         u_LMPC[:,t]   =  LMPCSol.u[:,1]
         u_NLMPC[:,t]  = NLMPCSol.u[:,1]
