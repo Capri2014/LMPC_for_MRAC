@@ -1,10 +1,9 @@
 type TypeSystemParams          # parameters for MPC solver
-    Ar::Array{Float64,2}
-    Ad::Array{Float64,2}
-    B::Array{Float64,2}
-    n::Int64
-    d::Int64
-    TypeSystemParams( Ar=[1 1;1 1], Ad=[1 1;1 1], B=[1 1;1 1], n = 0, d= 0 ) = new(Ar, Ad, B, n, d)
+    g::Float64
+    rho::Float64
+    dt::Float64
+    xF::Array{Float64,2}
+    TypeSystemParams( g = 9, rho = 4,  dt= 0, xF = [0 0 0 0] ) = new(g, rho, dt, xF)
 end
 
 type TypeLMPCparams          # parameters for MPC solver

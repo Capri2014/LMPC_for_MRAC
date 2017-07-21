@@ -10,21 +10,20 @@ type LMPC_Model
     lamb::Array{JuMP.Variable,2}
 
     state_cost::JuMP.NonlinearExpression
-    input_cost::JuMP.NonlinearExpression
     termi_cost::JuMP.NonlinearExpression
 
     function LMPC_Model(LMPCparams::TypeLMPCparams,SystemParams::TypeSystemParams, SSdim::Int64)
         println("Starting creation")
         m = new()
-        A          = SystemParams.Ad
-        B          = SystemParams.B
-        n          = 7
-        d          = 5
+        n          = 4
+        d          = 1
 
         N           = LMPCparams.N
-        Q           = LMPCparams.Q
-        Qe          = LMPCparams.Qe
-        R           = LMPCparams.R
+
+	dt = SystemParams.dt
+        g  = SystemParams.g
+	rho= SystemParams.rho
+        xF = SystemParams.xF
 
         # Create Model
         mdl = Model(solver = IpoptSolver(print_level=0))
@@ -40,64 +39,54 @@ type LMPC_Model
         @NLparameter(mdl, Qfun[1:SSdim] == 0)
 
 
-        # System dynamics
+        # System Initial Condition
         @NLconstraint(mdl, [i=1:n], x_Ol[i,1] == x0[i])         # initial condition
         println("Initializing model...")
 
         # System dynamics
-
         for i=1:N
-            for j=1:2
-                    @NLconstraint(mdl, x_Ol[j,i+1] == sum{A[j,k] * x_Ol[k,i] + B[j,k] * u_Ol[k,i], k=1:2})
-            end
-            @NLconstraint(mdl, x_Ol[3,i+1] == sum{A[1,k] * x_Ol[k+2,i], k=1:2}
-                         + x_Ol[5,i+1]*(x_Ol[1,i] + x_Ol[3,i]) + x_Ol[6,i+1]*(x_Ol[2,i] + x_Ol[4,i]) )
+            @NLconstraint(mdl, x_Ol[1,i+1] == x_Ol[1, i] + dt * ( u_Ol[1, i] - g*sin( 3*sin( ( x_Ol[2,i] - xF[2] )/ xF[2]*2*3.14  )  ) - rho*x_Ol[1,i]^2  ))
            
-            @NLconstraint(mdl, x_Ol[4,i+1] == sum{A[2,k] * x_Ol[k+2,i], k=1:2} + x_Ol[7,i+1]*(x_Ol[2,i] + x_Ol[4,i]) )
-            for j=5:7
-                    @NLconstraint(mdl, x_Ol[j,i+1] == x_Ol[j,i] + u_Ol[j-2,i])
-            end
+	    @NLconstraint(mdl, x_Ol[2,i+1] == x_Ol[2, i] + dt * (x_Ol[1, i]) )
+	    @NLconstraint(mdl, x_Ol[3,i+1] == x_Ol[1, i])
+	    @NLconstraint(mdl, x_Ol[4,i+1] == x_Ol[2, i]) 
         end
-        
+       
+	# Constraints
         # for i=1:N+1
         #     setupperbound(x_Ol[2,i],  0.2)
         # end
 
-        for j=3:5
-            for i=1:N
-                setlowerbound(u_Ol[j,i], -500)
-                setupperbound(u_Ol[j,i],  500)
-            end
-        end
+        #for j=3:5
+        #    for i=1:N
+        #        setlowerbound(u_Ol[j,i], -500)
+        #        setupperbound(u_Ol[j,i],  500)
+        #    end
+        #end
 
+	# Constraints on lambda
         for j=1:SSdim
             setlowerbound(lamb[j,1], 0)
         end
         @NLconstraint(mdl,sum{lamb[j,1], j = 1:SSdim} == 1)
 
-
+        # Convex Sefe Set Constraint
         @NLconstraint(mdl, x_Ol[1,N+1] == sum{SS[1,k] * lamb[k,1], k = 1:SSdim})        
         @NLconstraint(mdl, x_Ol[2,N+1] == sum{SS[2,k] * lamb[k,1], k = 1:SSdim})        
         @NLconstraint(mdl, x_Ol[3,N+1] == sum{SS[3,k] * lamb[k,1], k = 1:SSdim})        
         @NLconstraint(mdl, x_Ol[4,N+1] == sum{SS[4,k] * lamb[k,1], k = 1:SSdim})        
-        @NLconstraint(mdl, x_Ol[5,N+1] == sum{SS[5,k] * lamb[k,1], k = 1:SSdim})        
-        @NLconstraint(mdl, x_Ol[6,N+1] == sum{SS[6,k] * lamb[k,1], k = 1:SSdim})        
-        @NLconstraint(mdl, x_Ol[7,N+1] == sum{SS[7,k] * lamb[k,1], k = 1:SSdim})   
-               # Cost definitions
+        
+	# Cost definitions
         # State cost
-        # ---------------------------------
-        @NLexpression(mdl, state_cost, sum{sum{ (Q[j,j]  * x_Ol[j,i])^2  , i=1:N},j=1:2} + 
-                                       sum{sum{ (Qe[j,j] * x_Ol[j+2,i])^2, i=1:N},j=1:2})
+	@NLexpression(mdl, state_cost, sum{ u_Ol[1, j]^2, j=1:N}  
+        + sum{10*( x_Ol[1,j]^2 + (x_Ol[2,j]-xF[2])^2 + x_Ol[3,j]^2 + (x_Ol[4,j]-xF[4])^2  )/( (10*( x_Ol[1,j]^2 + (x_Ol[2,j]-xF[2])^2 + x_Ol[3,j]^2 + (x_Ol[4,j]-xF[4]) )^2)^2 + 1)^0.5 , j=1:N+1} ) 
 
-        # Control Input cost
-        @NLexpression(mdl, input_cost, sum{sum{ (R[j,j] * u_Ol[j,i])^2, i=1:N},j=1:2})
-
-        # Control Input cost
+        # Terminal  cost
         @NLexpression(mdl, termi_cost, sum{ Qfun[j] * lamb[j,1] ,j=1:SSdim})
 
 
         # Objective function
-        @NLobjective(mdl, Min, state_cost + input_cost + termi_cost)
+        @NLobjective(mdl, Min, state_cost + termi_cost)
 
         # First solve
         #sol_stat=solve(mdl)
@@ -112,7 +101,6 @@ type LMPC_Model
         m.x_Ol = x_Ol
         m.u_Ol = u_Ol
         m.state_cost = state_cost
-        m.input_cost = input_cost
         m.termi_cost = termi_cost
         
         return m
